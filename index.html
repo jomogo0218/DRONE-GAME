@@ -255,6 +255,10 @@
           </div>
         </div>
         <div class="w-full mt-3">
+          <div id="penaltyPick" class="hidden w-full grid grid-cols-2 gap-2">
+            <button onclick="choosePenaltySide('blue')" class="py-2.5 rounded-xl bg-sky-600 active:scale-95 text-white font-black text-sm border border-sky-200/40">藍方</button>
+            <button onclick="choosePenaltySide('red')" class="py-2.5 rounded-xl bg-rose-600 active:scale-95 text-white font-black text-sm border border-rose-200/40">紅方</button>
+          </div>
           <button id="timerToggleBtn" onclick="toggleTimerWithProtocol()" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 active:scale-95 text-white font-hud font-bold text-xs sm:text-sm tracking-wider shadow-md border border-white/20 flex items-center justify-center gap-2">
             <span id="timerBtnIcon">▶</span>
             <span id="timerBtnLabel">開始比賽</span>
@@ -286,7 +290,7 @@
       <div id="countdownPhaseLabel" class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
       <h2 class="text-xl font-black text-white tracking-wide">各就各位</h2>
       <div id="countdownNumber" class="font-hud text-9xl font-black text-amber-400 my-4 drop-shadow-[0_0_35px_rgba(251,191,36,0.9)]">5</div>
-      <p class="text-xs text-slate-300/80 mb-6">中文報數結束後鳴哨，3 分鐘計時才開始</p>
+      <p id="countdownHint" class="text-xs text-slate-300/80 mb-6">中文報數結束後鳴哨，3 分鐘計時才開始</p>
       <button onclick="cancelCountdown()" class="py-2.5 px-6 rounded-xl bg-slate-800 active:scale-95 text-slate-200 text-xs font-bold border border-slate-600/70">取消倒數</button>
     </div>
   </div>
@@ -302,6 +306,7 @@
     var PENALTY_SECONDS = 10;
     var penaltyRemaining = 10;
     var penaltyIndex = 0;
+    var penaltyShooter = null;
     var penaltyRunning = false;
     var roundNumber = 1;
     var pressedSide = null;
@@ -426,14 +431,23 @@
     }
 
     function penaltySide() {
-      return penaltyIndex % 2 === 0 ? 'blue' : 'red';
+      return penaltyShooter;
+    }
+
+    function choosePenaltySide(team) {
+      if (mode !== 'penalty' || penaltyRunning || countdownInterval || countdownArmTimer) return;
+      if (team !== 'blue' && team !== 'red') return;
+      getAudioCtx();
+      penaltyShooter = team;
+      updateTimerUIState();
+      beginPenaltyCountdown();
     }
 
     function toggleTimerWithProtocol() {
       getAudioCtx();
       if (countdownInterval || countdownArmTimer) return;
       if (mode === 'penalty') {
-        if (!penaltyRunning) startPenaltyShot();
+        if (!penaltyRunning && penaltyShooter) beginPenaltyCountdown();
         return;
       }
       if (timerRunning) {
@@ -444,15 +458,35 @@
     }
 
     function startCountdown5s() {
-      var resuming = remainingSeconds > 0 && remainingSeconds < MATCH_SECONDS;
-      var startWord = resuming ? '繼續比賽' : '開賽';
+      var resuming = mode !== 'penalty' && remainingSeconds > 0 && remainingSeconds < MATCH_SECONDS;
+      runCountdown5s({
+        startWord: resuming ? '繼續比賽' : '開賽',
+        phaseLabel: resuming ? '準備繼續' : '準備開賽',
+        hint: '中文報數結束後鳴哨，3 分鐘計時才開始',
+        onDone: beginRunningTimer
+      });
+    }
+
+    function beginPenaltyCountdown() {
+      if (mode !== 'penalty' || penaltyRunning || !penaltyShooter) return;
+      var sideName = penaltyShooter === 'blue' ? '藍方點球' : '紅方點球';
+      runCountdown5s({
+        startWord: sideName,
+        phaseLabel: '準備點球',
+        hint: '中文報數結束後鳴哨，10 秒點球才開始',
+        onDone: startPenaltyShot
+      });
+    }
+
+    function runCountdown5s(options) {
       pauseTimer();
       cancelCountdown();
       countdownSec = 5;
       var numberEl = document.getElementById('countdownNumber');
       numberEl.classList.remove('is-phrase');
       numberEl.textContent = '5';
-      document.getElementById('countdownPhaseLabel').textContent = resuming ? '準備繼續' : '準備開賽';
+      document.getElementById('countdownPhaseLabel').textContent = options.phaseLabel;
+      document.getElementById('countdownHint').textContent = options.hint;
       showCountdown(true);
       speakText('五', 750);
       countdownInterval = setInterval(function () {
@@ -465,19 +499,20 @@
         }
         clearInterval(countdownInterval);
         countdownInterval = null;
-        numberEl.textContent = startWord;
-        numberEl.classList.toggle('is-phrase', startWord.length > 2);
-        speakText(startWord, 1250);
+        numberEl.textContent = options.startWord;
+        numberEl.classList.toggle('is-phrase', options.startWord.length > 2);
+        speakText(options.startWord, 1250);
         soundWhistle(true);
         countdownArmTimer = setTimeout(function () {
           countdownArmTimer = null;
           showCountdown(false);
-          beginRunningTimer();
+          options.onDone();
         }, 450);
       }, 1000);
     }
 
     function cancelCountdown() {
+      var wasCounting = !!(countdownInterval || countdownArmTimer);
       if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
@@ -488,6 +523,10 @@
       }
       showCountdown(false);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (wasCounting && mode === 'penalty' && !penaltyRunning) {
+        penaltyShooter = null;
+        updateTimerUIState();
+      }
     }
 
     function beginRunningTimer() {
@@ -553,6 +592,7 @@
       mode = 'penalty';
       penaltyRunning = false;
       penaltyIndex = 0;
+      penaltyShooter = null;
       penaltyRemaining = PENALTY_SECONDS;
       pressedSide = null;
       renderTimerDisplay();
@@ -564,9 +604,6 @@
       if (mode !== 'penalty' || penaltyRunning) return;
       penaltyRunning = true;
       penaltyRemaining = PENALTY_SECONDS;
-      var sideName = penaltySide() === 'blue' ? '藍方點球' : '紅方點球';
-      speakText(sideName, 880);
-      soundWhistle(false);
       renderTimerDisplay();
       updateTimerUIState();
       clearInterval(timerInterval);
@@ -584,6 +621,7 @@
       clearInterval(timerInterval);
       timerInterval = null;
       pressedSide = null;
+      penaltyShooter = null;
       penaltyIndex += 1;
       penaltyRemaining = PENALTY_SECONDS;
       soundWhistle(false);
@@ -596,6 +634,7 @@
       mode = 'regulation';
       penaltyRunning = false;
       penaltyIndex = 0;
+      penaltyShooter = null;
       penaltyRemaining = PENALTY_SECONDS;
       matchStarted = false;
       remainingSeconds = MATCH_SECONDS;
@@ -616,14 +655,14 @@
       var penaltyMeta = document.getElementById('penaltyMeta');
       var endPenaltyBtn = document.getElementById('endPenaltyBtn');
       if (mode === 'penalty') {
-        var sideName = penaltySide() === 'blue' ? '藍方' : '紅方';
+        var sideName = penaltyShooter === 'blue' ? '藍方' : penaltyShooter === 'red' ? '紅方' : '請選擇';
         icon.textContent = penaltyRunning ? '●' : '▶';
-        label.textContent = penaltyRunning ? '點球進行中' : (penaltyIndex === 0 ? '開始點球' : '下一球');
+        label.textContent = penaltyRunning ? '點球進行中' : '開始點球';
         statusDot.className = penaltyRunning
           ? 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping'
           : 'w-2.5 h-2.5 rounded-full bg-amber-400';
-        statusText.textContent = '點球大賽';
-        toggleBtn.disabled = penaltyRunning;
+        statusText.textContent = penaltyShooter ? '點球大賽' : '選擇點球方';
+        toggleBtn.disabled = penaltyRunning || !penaltyShooter;
         penaltyMeta.textContent = '第 ' + (penaltyIndex + 1) + ' 球 · ' + sideName;
         penaltyMeta.classList.remove('hidden');
         endPenaltyBtn.classList.toggle('hidden', penaltyRunning);
@@ -654,6 +693,9 @@
         penaltyMeta.classList.add('hidden');
         endPenaltyBtn.classList.add('hidden');
       }
+      var picking = mode === 'penalty' && !penaltyRunning && !penaltyShooter && !countdownInterval && !countdownArmTimer;
+      document.getElementById('penaltyPick').classList.toggle('hidden', !picking);
+      document.getElementById('timerToggleBtn').classList.toggle('hidden', picking);
       syncScoreLock();
     }
 
@@ -669,15 +711,15 @@
     function claimScoreSide() {}
 
     function refreshSideMute() {
-      var inPenalty = mode === 'penalty';
-      document.getElementById('blueCourt').classList.toggle('side-muted', inPenalty && penaltySide() !== 'blue');
-      document.getElementById('redCourt').classList.toggle('side-muted', inPenalty && penaltySide() !== 'red');
+      document.getElementById('blueCourt').classList.toggle('side-muted', mode === 'penalty' && penaltyShooter !== 'blue');
+      document.getElementById('redCourt').classList.toggle('side-muted', mode === 'penalty' && penaltyShooter !== 'red');
     }
 
     function hintFor(team) {
       if (mode === 'penalty') {
-        if (penaltySide() !== team) return '本局不能點這邊';
-        return penaltyRunning ? '點球中，點畫面得分' : '輪到這邊，按開始點球';
+        if (!penaltyShooter) return '請在中間選擇點球方';
+        if (penaltyShooter !== team) return '本局不能點這邊';
+        return penaltyRunning ? '點球中，點畫面得分' : '倒數結束後才能得分';
       }
       if (!matchStarted) return '開始比賽後才能得分';
       return team === 'blue' ? '藍方得分，點畫面 +1' : '紅方得分，點畫面 +1';
@@ -741,6 +783,7 @@
       mode = 'regulation';
       penaltyRunning = false;
       penaltyIndex = 0;
+      penaltyShooter = null;
       penaltyRemaining = PENALTY_SECONDS;
       roundNumber = 1;
       pressedSide = null;
