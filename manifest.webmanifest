@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "足球無人機計分器",
-  "short_name": "無人機計分",
-  "description": "左藍右紅計分，中間 3 分鐘倒數",
+  "name": "嘉華中學 CHSH DRONE TEAM",
+  "short_name": "CHSH計分",
+  "description": "嘉華中學無人機足球計分器",
   "lang": "zh-Hant",
   "start_url": "./index.html",
   "scope": "./",

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>無人機足球專業競技計分系統</title>
+  <title>嘉華中學 CHSH DRONE TEAM 計分器</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#0e1218">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="無人機計分">
+  <meta name="apple-mobile-web-app-title" content="CHSH計分">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -149,6 +149,11 @@
     .phone-rotate-icon {
       animation: phoneRotateAnim 2.4s infinite cubic-bezier(0.45, 0, 0.55, 1);
     }
+    #countdownNumber.is-phrase {
+      font-size: clamp(36px, 7vw, 64px);
+      letter-spacing: 0.12em;
+      line-height: 1.15;
+    }
   </style>
 </head>
 <body class="theme-stadium w-screen h-screen flex flex-col overflow-hidden">
@@ -241,17 +246,25 @@
       </div>
     </div>
 
-    <header class="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+    <div class="absolute top-2 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5">
+      <div class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-lg flex items-center gap-2 text-white">
+        <span class="text-[11px] sm:text-xs font-black tracking-wide">嘉華中學</span>
+        <span class="w-px h-3 bg-white/35"></span>
+        <span class="font-hud text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-sky-200">CHSH DRONE TEAM</span>
+      </div>
+    <header class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
       <button onclick="soundWhistle(true)" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-sky-300 font-bold">鳴哨</button>
       <button onclick="cycleTheme()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-amber-300 font-bold">🎨 <span id="themeNameTag">極簡白金</span></button>
       <button onclick="resetMatch()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-slate-200 font-bold">重置</button>
       <button onclick="requestForceLandscape()" class="px-2.5 py-1 rounded-full bg-sky-500/30 active:scale-95 text-xs text-sky-100 font-bold border border-sky-400/30">⛶ 橫向</button>
     </header>
+    </div>
   </main>
 
   <div id="countdownModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
     <div class="max-w-xs w-full flex flex-col items-center">
-      <div class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
+      <div class="text-[11px] font-black tracking-wide text-white/90 mb-2">嘉華中學 · CHSH DRONE TEAM</div>
+      <div id="countdownPhaseLabel" class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
       <h2 class="text-xl font-black text-white tracking-wide">各就各位</h2>
       <div id="countdownNumber" class="font-hud text-9xl font-black text-amber-400 my-4 drop-shadow-[0_0_35px_rgba(251,191,36,0.9)]">5</div>
       <p class="text-xs text-slate-300/80 mb-6">中文報數結束後鳴哨，3 分鐘計時才開始</p>
@@ -392,23 +405,30 @@
     }
 
     function startCountdown5s() {
+      var resuming = remainingSeconds > 0 && remainingSeconds < MATCH_SECONDS;
+      var startWord = resuming ? '繼續比賽' : '開賽';
       pauseTimer();
       cancelCountdown();
       countdownSec = 5;
-      document.getElementById('countdownNumber').textContent = '5';
+      var numberEl = document.getElementById('countdownNumber');
+      numberEl.classList.remove('is-phrase');
+      numberEl.textContent = '5';
+      document.getElementById('countdownPhaseLabel').textContent = resuming ? '準備繼續' : '準備開賽';
       showCountdown(true);
       speakText('五', 750);
       countdownInterval = setInterval(function () {
         countdownSec -= 1;
         if (countdownSec > 0) {
-          document.getElementById('countdownNumber').textContent = String(countdownSec);
+          numberEl.classList.remove('is-phrase');
+          numberEl.textContent = String(countdownSec);
           speakText(COUNT_WORDS[countdownSec], 750 + (5 - countdownSec) * 75);
           return;
         }
         clearInterval(countdownInterval);
         countdownInterval = null;
-        document.getElementById('countdownNumber').textContent = '開賽';
-        speakText('開賽', 1250);
+        numberEl.textContent = startWord;
+        numberEl.classList.toggle('is-phrase', startWord.length > 2);
+        speakText(startWord, 1250);
         soundWhistle(true);
         setTimeout(function () {
           showCountdown(false);
