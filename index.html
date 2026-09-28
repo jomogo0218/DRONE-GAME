@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>無人機足球專業競技計分系統</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0e1218">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="無人機計分">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Teko:wght@600;700&family=Noto+Sans+TC:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #050811;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    .font-hud { font-family: Orbitron, Bahnschrift, ui-monospace, monospace; }
+    .font-score { font-family: Teko, Bahnschrift, "Arial Narrow", sans-serif; }
+
+    body.theme-cyber {
+      --blue-bg: radial-gradient(circle at 15% 50%, #0048b3 0%, #03256c 60%, #011438 100%);
+      --red-bg: radial-gradient(circle at 85% 50%, #b30d25 0%, #6d0514 60%, #360209 100%);
+      --hud-bg: rgba(10, 16, 30, 0.78);
+      --hud-border: rgba(255, 255, 255, 0.22);
+      --hud-text: #ffffff;
+      --divider-color: rgba(255, 255, 255, 0.85);
+    }
+
+    body.theme-stadium {
+      --blue-bg: linear-gradient(135deg, #1d68e8 0%, #0b45ab 100%);
+      --red-bg: linear-gradient(225deg, #e6223d 0%, #ab0c21 100%);
+      --hud-bg: rgba(255, 255, 255, 0.94);
+      --hud-border: #ffffff;
+      --hud-text: #090d16;
+      --divider-color: #ffffff;
+    }
+
+    body.theme-carbon {
+      --blue-bg: radial-gradient(ellipse at bottom left, #0d3b66 0%, #05192d 50%, #020b14 100%);
+      --red-bg: radial-gradient(ellipse at bottom right, #6b0f1a 0%, #37060c 50%, #150204 100%);
+      --hud-bg: rgba(18, 22, 33, 0.88);
+      --hud-border: rgba(99, 102, 241, 0.4);
+      --hud-text: #f8fafc;
+      --divider-color: rgba(148, 163, 184, 0.6);
+    }
+
+    .pitch-zone-blue {
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0),
+        var(--blue-bg);
+      background-size: 24px 24px, 100% 100%;
+    }
+    .pitch-zone-red {
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0),
+        var(--red-bg);
+      background-size: 24px 24px, 100% 100%;
+    }
+
+    .court-divider {
+      background: var(--divider-color);
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.8);
+    }
+
+    .blue-glow {
+      text-shadow: 0 0 40px rgba(56, 189, 248, 0.8), 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+    .red-glow {
+      text-shadow: 0 0 40px rgba(244, 63, 94, 0.8), 0 4px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-island {
+      background: var(--hud-bg);
+      border: 2px solid var(--hud-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: var(--hud-text);
+      box-shadow:
+        0 15px 35px -5px rgba(0, 0, 0, 0.45),
+        0 0 25px rgba(255, 255, 255, 0.12),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple 0.5s ease-out;
+      pointer-events: none;
+    }
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    @keyframes scorePop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+    .score-pop { animation: scorePop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    .score-block {
+      width: 100%;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .score-block-blue { padding-right: 36px; }
+    .score-block-red { padding-left: 36px; }
+    .score-num {
+      font-size: clamp(160px, 38vh, 300px);
+      line-height: 0.78;
+      letter-spacing: -0.05em;
+      max-width: 100%;
+    }
+
+    #orientGuideModal { display: none; }
+    @media (orientation: portrait) {
+      #orientGuideModal { display: flex !important; }
+    }
+    @keyframes phoneRotateAnim {
+      0%, 15% { transform: rotate(0deg); }
+      50%, 85% { transform: rotate(90deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .phone-rotate-icon {
+      animation: phoneRotateAnim 2.4s infinite cubic-bezier(0.45, 0, 0.55, 1);
+    }
+  </style>
+</head>
+<body class="theme-stadium w-screen h-screen flex flex-col overflow-hidden">
+
+  <div id="orientGuideModal" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center text-white">
+    <div class="max-w-xs w-full flex flex-col items-center">
+      <div class="w-20 h-28 border-4 border-sky-400 rounded-2xl flex items-center justify-center relative mb-6 shadow-[0_0_30px_rgba(56,189,248,0.4)] phone-rotate-icon">
+        <span class="w-2 h-2 rounded-full bg-sky-400/80 absolute top-2"></span>
+        <span class="text-2xl font-black text-sky-300">↻</span>
+        <span class="w-6 h-1 rounded-full bg-sky-400/80 absolute bottom-2"></span>
+      </div>
+      <div class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-hud font-bold border border-sky-400/40 uppercase tracking-widest mb-2">
+        請轉成橫向
+      </div>
+      <h2 class="text-2xl font-black text-white mb-2 tracking-wide">請將手機轉為橫向螢幕</h2>
+      <p class="text-sm text-slate-300 leading-relaxed mb-6">
+        計分板是左藍右紅。請把手機轉橫，或打開自動旋轉。
+      </p>
+      <button onclick="requestForceLandscape()" class="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 active:scale-95 text-white font-black text-base shadow-lg border border-sky-300/40 transition flex items-center justify-center gap-2">
+        <span>⛶</span>
+        <span>鎖定橫向全螢幕</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="relative flex-1 w-full h-full flex flex-row overflow-hidden">
+    <section id="blueCourt" onclick="handleCourtClick(event, 'blue')" class="pitch-zone-blue relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 cursor-pointer overflow-hidden">
+      <div class="relative z-10 flex items-center justify-between pointer-events-none">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-sky-400/40 text-sky-200 text-xs font-hud font-bold tracking-wider">
+            <span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>
+            藍邊
+          </span>
+        </div>
+      </div>
+      <div class="score-block score-block-blue relative z-10 my-auto pointer-events-none">
+        <div class="text-[11px] sm:text-xs font-bold tracking-widest text-sky-100/90 mb-0">藍方得分，點畫面 +1</div>
+        <div id="blueScore" class="score-num font-score font-bold text-white blue-glow">0</div>
+      </div>
+      <div class="relative z-20 flex items-center justify-center gap-3 w-full max-w-xs mx-auto mb-1">
+        <button onclick="event.stopPropagation(); changeScore('blue', 1)" class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5">
+          <span>+1</span>
+          <span class="text-xs px-2 py-0.5 rounded-md bg-black/30 tracking-wider">進球</span>
+        </button>
+        <button onclick="event.stopPropagation(); changeScore('blue', -1)" class="w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40">-1</button>
+      </div>
+    </section>
+
+    <section id="redCourt" onclick="handleCourtClick(event, 'red')" class="pitch-zone-red relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 cursor-pointer overflow-hidden">
+      <div class="relative z-10 flex items-center justify-between pointer-events-none">
+        <div class="flex items-center gap-2 ml-auto">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-rose-400/40 text-rose-200 text-xs font-hud font-bold tracking-wider">
+            紅邊
+            <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+          </span>
+        </div>
+      </div>
+      <div class="score-block score-block-red relative z-10 my-auto pointer-events-none">
+        <div class="text-[11px] sm:text-xs font-bold tracking-widest text-rose-100/90 mb-0">紅方得分，點畫面 +1</div>
+        <div id="redScore" class="score-num font-score font-bold text-white red-glow">0</div>
+      </div>
+      <div class="relative z-20 flex items-center justify-center gap-3 w-full max-w-xs mx-auto mb-1">
+        <button onclick="event.stopPropagation(); changeScore('red', -1)" class="w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-rose-200 text-xl sm:text-2xl font-black border border-rose-400/40">-1</button>
+        <button onclick="event.stopPropagation(); changeScore('red', 1)" class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-rose-200/50 flex items-center justify-center gap-1.5">
+          <span class="text-xs px-2 py-0.5 rounded-md bg-black/30 tracking-wider">進球</span>
+          <span>+1</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
+      <div class="court-divider absolute w-1 sm:w-1.5 h-full"></div>
+      <div class="pointer-events-auto hud-island relative w-[240px] sm:w-[280px] rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between text-center">
+        <div class="flex items-center justify-center gap-2 mb-1 w-full">
+          <span id="liveStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+          <span id="liveStatusText" class="text-[10px] sm:text-[11px] font-hud font-bold tracking-widest uppercase opacity-80">準備中</span>
+        </div>
+        <div class="my-1 flex flex-col items-center">
+          <div id="mainTimer" class="font-hud text-5xl sm:text-6xl font-black tracking-tight leading-none">03:00</div>
+          <div class="w-40 sm:w-48 h-1.5 bg-black/15 rounded-full mt-2 overflow-hidden">
+            <div id="timerProgressFill" class="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-rose-500 rounded-full w-full"></div>
+          </div>
+        </div>
+        <div class="w-full mt-3">
+          <button id="timerToggleBtn" onclick="toggleTimerWithProtocol()" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 active:scale-95 text-white font-hud font-bold text-xs sm:text-sm tracking-wider shadow-md border border-white/20 flex items-center justify-center gap-2">
+            <span id="timerBtnIcon">▶</span>
+            <span id="timerBtnLabel">開始比賽</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <header class="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+      <button onclick="soundWhistle(true)" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-sky-300 font-bold">鳴哨</button>
+      <button onclick="cycleTheme()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-amber-300 font-bold">🎨 <span id="themeNameTag">極簡白金</span></button>
+      <button onclick="resetMatch()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-slate-200 font-bold">重置</button>
+      <button onclick="requestForceLandscape()" class="px-2.5 py-1 rounded-full bg-sky-500/30 active:scale-95 text-xs text-sky-100 font-bold border border-sky-400/30">⛶ 橫向</button>
+    </header>
+  </main>
+
+  <div id="countdownModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
+    <div class="max-w-xs w-full flex flex-col items-center">
+      <div class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
+      <h2 class="text-xl font-black text-white tracking-wide">各就各位</h2>
+      <div id="countdownNumber" class="font-hud text-9xl font-black text-amber-400 my-4 drop-shadow-[0_0_35px_rgba(251,191,36,0.9)]">5</div>
+      <p class="text-xs text-slate-300/80 mb-6">中文報數結束後鳴哨，3 分鐘計時才開始</p>
+      <button onclick="cancelCountdown()" class="py-2.5 px-6 rounded-xl bg-slate-800 active:scale-95 text-slate-200 text-xs font-bold border border-slate-600/70">取消倒數</button>
+    </div>
+  </div>
+
+  <script>
+    var blueScore = 0;
+    var redScore = 0;
+    var MATCH_SECONDS = 180;
+    var remainingSeconds = 180;
+    var timerRunning = false;
+    var timerInterval = null;
+    var countdownInterval = null;
+    var countdownSec = 5;
+    var themes = [
+      { id: 'theme-stadium', name: '極簡白金' },
+      { id: 'theme-cyber', name: '競技光感' },
+      { id: 'theme-carbon', name: '暗黑碳纖' }
+    ];
+    var currentThemeIndex = 0;
+    var audioContext = null;
+    var chineseVoice = null;
+    var COUNT_WORDS = { 10: '十', 9: '九', 8: '八', 7: '七', 6: '六', 5: '五', 4: '四', 3: '三', 2: '二', 1: '一' };
+
+    function refreshVoices() {
+      if (!window.speechSynthesis) return;
+      var voices = window.speechSynthesis.getVoices();
+      var matches = voices.filter(function (voice) {
+        var lang = (voice.lang || '').toLowerCase().replace('_', '-');
+        return lang.indexOf('zh') === 0;
+      });
+      chineseVoice = matches.find(function (voice) {
+        return /zh-tw|zh-hant/i.test(voice.lang) || /hanhan|hsiao|yating|台灣|臺灣/i.test(voice.name);
+      }) || matches[0] || null;
+    }
+
+    function playBeep(freq) {
+      try {
+        var ctx = getAudioCtx();
+        if (!ctx) return;
+        var now = ctx.currentTime;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq || 880, now);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } catch (err) {}
+    }
+
+    function speakText(text, freq) {
+      if (freq) playBeep(freq);
+      if (!window.speechSynthesis || !text) return;
+      try {
+        refreshVoices();
+        var utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'zh-TW';
+        utter.rate = 1.15;
+        if (chineseVoice) utter.voice = chineseVoice;
+        window.speechSynthesis.cancel();
+        setTimeout(function () {
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(utter);
+        }, 40);
+      } catch (err) {}
+    }
+
+    if (window.speechSynthesis) {
+      refreshVoices();
+      window.speechSynthesis.onvoiceschanged = refreshVoices;
+    }
+
+    function getAudioCtx() {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      if (!audioContext) audioContext = new Ctx();
+      if (audioContext.state === 'suspended') audioContext.resume();
+      return audioContext;
+    }
+
+    function soundWhistle(loud) {
+      try {
+        var ctx = getAudioCtx();
+        if (!ctx) return;
+        var now = ctx.currentTime;
+        var osc1 = ctx.createOscillator();
+        var osc2 = ctx.createOscillator();
+        var lfo = ctx.createOscillator();
+        var lfoGain = ctx.createGain();
+        var masterGain = ctx.createGain();
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(2940, now);
+        osc2.frequency.setValueAtTime(3280, now);
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(38, now);
+        lfoGain.gain.setValueAtTime(140, now);
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.frequency);
+        lfoGain.connect(osc2.frequency);
+        var duration = loud ? 0.95 : 0.42;
+        var volume = loud ? 0.35 : 0.18;
+        masterGain.gain.setValueAtTime(0.001, now);
+        masterGain.gain.linearRampToValueAtTime(volume, now + 0.03);
+        masterGain.gain.setValueAtTime(volume, now + duration * 0.72);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc1.connect(masterGain);
+        osc2.connect(masterGain);
+        masterGain.connect(ctx.destination);
+        lfo.start(now);
+        osc1.start(now);
+        osc2.start(now);
+        lfo.stop(now + duration);
+        osc1.stop(now + duration);
+        osc2.stop(now + duration);
+      } catch (err) {}
+    }
+
+    function showCountdown(show) {
+      var modal = document.getElementById('countdownModal');
+      modal.classList.toggle('hidden', !show);
+      modal.classList.toggle('flex', show);
+    }
+
+    function toggleTimerWithProtocol() {
+      getAudioCtx();
+      if (timerRunning) {
+        pauseTimer(true);
+        return;
+      }
+      startCountdown5s();
+    }
+
+    function startCountdown5s() {
+      pauseTimer();
+      cancelCountdown();
+      countdownSec = 5;
+      document.getElementById('countdownNumber').textContent = '5';
+      showCountdown(true);
+      speakText('五', 750);
+      countdownInterval = setInterval(function () {
+        countdownSec -= 1;
+        if (countdownSec > 0) {
+          document.getElementById('countdownNumber').textContent = String(countdownSec);
+          speakText(COUNT_WORDS[countdownSec], 750 + (5 - countdownSec) * 75);
+          return;
+        }
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        document.getElementById('countdownNumber').textContent = '開賽';
+        speakText('開賽', 1250);
+        soundWhistle(true);
+        setTimeout(function () {
+          showCountdown(false);
+          beginRunningTimer();
+        }, 450);
+      }, 1000);
+    }
+
+    function cancelCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      showCountdown(false);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    }
+
+    function beginRunningTimer() {
+      if (remainingSeconds <= 0) remainingSeconds = MATCH_SECONDS;
+      timerRunning = true;
+      updateTimerUIState();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(function () {
+        if (remainingSeconds <= 0) return;
+        remainingSeconds -= 1;
+        renderTimerDisplay();
+        if (remainingSeconds === 30) speakText('最後三十秒', 920);
+        if (remainingSeconds > 0 && remainingSeconds <= 10) speakText(COUNT_WORDS[remainingSeconds], 820 + (10 - remainingSeconds) * 40);
+        if (remainingSeconds === 0) {
+          pauseTimer(false);
+          soundWhistle(true);
+          speakText('時間到，比賽結束');
+          document.getElementById('liveStatusText').textContent = '時間到';
+        }
+      }, 1000);
+    }
+
+    function pauseTimer(withAlert) {
+      timerRunning = false;
+      clearInterval(timerInterval);
+      updateTimerUIState();
+      if (withAlert) {
+        soundWhistle(false);
+        speakText('暫停', 700);
+      }
+    }
+
+    function renderTimerDisplay() {
+      var minutes = Math.floor(remainingSeconds / 60);
+      var seconds = remainingSeconds % 60;
+      var timerEl = document.getElementById('mainTimer');
+      timerEl.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+      var fillEl = document.getElementById('timerProgressFill');
+      fillEl.style.width = ((remainingSeconds / MATCH_SECONDS) * 100) + '%';
+      timerEl.classList.toggle('text-rose-500', remainingSeconds <= 10 && remainingSeconds > 0);
+    }
+
+    function updateTimerUIState() {
+      var icon = document.getElementById('timerBtnIcon');
+      var label = document.getElementById('timerBtnLabel');
+      var statusDot = document.getElementById('liveStatusDot');
+      var statusText = document.getElementById('liveStatusText');
+      if (timerRunning) {
+        icon.textContent = '⏸';
+        label.textContent = '暫停比賽';
+        statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+        statusText.textContent = '計時中';
+      } else if (remainingSeconds === 0) {
+        icon.textContent = '▶';
+        label.textContent = '開始比賽';
+        statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
+        statusText.textContent = '時間到';
+      } else {
+        icon.textContent = '▶';
+        label.textContent = remainingSeconds < MATCH_SECONDS ? '繼續比賽' : '開始比賽';
+        statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+        statusText.textContent = '準備中';
+      }
+    }
+
+    function handleCourtClick(event, team) {
+      if (event.target.closest('button')) return;
+      createRipple(event, team);
+      changeScore(team, 1);
+    }
+
+    function createRipple(event, team) {
+      var target = document.getElementById(team === 'blue' ? 'blueCourt' : 'redCourt');
+      var rect = target.getBoundingClientRect();
+      var ripple = document.createElement('span');
+      var size = Math.max(rect.width, rect.height) * 0.6;
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (event.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (event.clientY - rect.top - size / 2) + 'px';
+      ripple.className = 'ripple-effect ' + (team === 'blue' ? 'bg-sky-300/35' : 'bg-rose-300/35');
+      target.appendChild(ripple);
+      setTimeout(function () { ripple.remove(); }, 550);
+    }
+
+    function changeScore(team, delta) {
+      playBeep(team === 'blue' ? 950 : 1080);
+      if (navigator.vibrate) navigator.vibrate(25);
+      var next = Math.max(0, (team === 'blue' ? blueScore : redScore) + delta);
+      if (team === 'blue') blueScore = next;
+      else redScore = next;
+      var el = document.getElementById(team === 'blue' ? 'blueScore' : 'redScore');
+      el.textContent = String(next);
+      el.classList.remove('score-pop');
+      void el.offsetWidth;
+      el.classList.add('score-pop');
+    }
+
+    function resetMatch() {
+      pauseTimer();
+      cancelCountdown();
+      blueScore = 0;
+      redScore = 0;
+      remainingSeconds = MATCH_SECONDS;
+      document.getElementById('blueScore').textContent = '0';
+      document.getElementById('redScore').textContent = '0';
+      renderTimerDisplay();
+      updateTimerUIState();
+    }
+
+    function cycleTheme() {
+      currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+      var theme = themes[currentThemeIndex];
+      document.body.className = theme.id + ' w-screen h-screen flex flex-col overflow-hidden';
+      document.getElementById('themeNameTag').textContent = theme.name;
+    }
+
+    function requestForceLandscape() {
+      var root = document.documentElement;
+      var request = root.requestFullscreen || root.webkitRequestFullscreen;
+      var pending = request ? request.call(root) : Promise.resolve();
+      Promise.resolve(pending).then(function () {
+        if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
+      }).catch(function () {});
+    }
+
+    window.addEventListener('keydown', function (event) {
+      if (event.target && event.target.tagName === 'INPUT') return;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        toggleTimerWithProtocol();
+      }
+    });
+
+    renderTimerDisplay();
+    updateTimerUIState();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
