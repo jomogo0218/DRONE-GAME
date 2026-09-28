@@ -154,9 +154,25 @@
       letter-spacing: 0.12em;
       line-height: 1.15;
     }
+    .score-btn:disabled {
+      opacity: 0.38;
+      cursor: default;
+    }
+    #blueCourt,
+    #redCourt {
+      cursor: default;
+    }
+    #blueCourt.court-open,
+    #redCourt.court-open {
+      cursor: pointer;
+    }
+    .side-muted {
+      filter: saturate(0.55) brightness(0.72);
+      pointer-events: none;
+    }
   </style>
 </head>
-<body class="theme-stadium w-screen h-screen flex flex-col overflow-hidden">
+<body class="theme-stadium score-locked w-screen h-screen flex flex-col overflow-hidden">
 
   <div id="orientGuideModal" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center text-white">
     <div class="max-w-xs w-full flex flex-col items-center">
@@ -180,7 +196,7 @@
   </div>
 
   <main class="relative flex-1 w-full h-full flex flex-row overflow-hidden">
-    <section id="blueCourt" onclick="handleCourtClick(event, 'blue')" class="pitch-zone-blue relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 cursor-pointer overflow-hidden">
+    <section id="blueCourt" onpointerdown="claimScoreSide(event, 'blue')" onclick="handleCourtClick(event, 'blue')" class="pitch-zone-blue relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
       <div class="relative z-10 flex items-center justify-between pointer-events-none">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-sky-400/40 text-sky-200 text-xs font-hud font-bold tracking-wider">
@@ -190,19 +206,19 @@
         </div>
       </div>
       <div class="score-block score-block-blue relative z-10 my-auto pointer-events-none">
-        <div class="text-[11px] sm:text-xs font-bold tracking-widest text-sky-100/90 mb-0">藍方得分，點畫面 +1</div>
+        <div class="score-hint text-[11px] sm:text-xs font-bold tracking-widest text-sky-100/90 mb-0" data-team="blue">開始比賽後才能得分</div>
         <div id="blueScore" class="score-num font-score font-bold text-white blue-glow">0</div>
       </div>
       <div class="relative z-20 flex items-center justify-center gap-3 w-full max-w-xs mx-auto mb-1">
-        <button onclick="event.stopPropagation(); changeScore('blue', 1)" class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5">
+        <button onclick="event.stopPropagation(); changeScore('blue', 1)" data-team="blue" disabled class="score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5">
           <span>+1</span>
           <span class="text-xs px-2 py-0.5 rounded-md bg-black/30 tracking-wider">進球</span>
         </button>
-        <button onclick="event.stopPropagation(); changeScore('blue', -1)" class="w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40">-1</button>
+        <button onclick="event.stopPropagation(); changeScore('blue', -1)" data-team="blue" disabled class="score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40">-1</button>
       </div>
     </section>
 
-    <section id="redCourt" onclick="handleCourtClick(event, 'red')" class="pitch-zone-red relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 cursor-pointer overflow-hidden">
+    <section id="redCourt" onpointerdown="claimScoreSide(event, 'red')" onclick="handleCourtClick(event, 'red')" class="pitch-zone-red relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
       <div class="relative z-10 flex items-center justify-between pointer-events-none">
         <div class="flex items-center gap-2 ml-auto">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-rose-400/40 text-rose-200 text-xs font-hud font-bold tracking-wider">
@@ -212,12 +228,12 @@
         </div>
       </div>
       <div class="score-block score-block-red relative z-10 my-auto pointer-events-none">
-        <div class="text-[11px] sm:text-xs font-bold tracking-widest text-rose-100/90 mb-0">紅方得分，點畫面 +1</div>
+        <div class="score-hint text-[11px] sm:text-xs font-bold tracking-widest text-rose-100/90 mb-0" data-team="red">開始比賽後才能得分</div>
         <div id="redScore" class="score-num font-score font-bold text-white red-glow">0</div>
       </div>
       <div class="relative z-20 flex items-center justify-center gap-3 w-full max-w-xs mx-auto mb-1">
-        <button onclick="event.stopPropagation(); changeScore('red', -1)" class="w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-rose-200 text-xl sm:text-2xl font-black border border-rose-400/40">-1</button>
-        <button onclick="event.stopPropagation(); changeScore('red', 1)" class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-rose-200/50 flex items-center justify-center gap-1.5">
+        <button onclick="event.stopPropagation(); changeScore('red', -1)" data-team="red" disabled class="score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-rose-200 text-xl sm:text-2xl font-black border border-rose-400/40">-1</button>
+        <button onclick="event.stopPropagation(); changeScore('red', 1)" data-team="red" disabled class="score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-rose-200/50 flex items-center justify-center gap-1.5">
           <span class="text-xs px-2 py-0.5 rounded-md bg-black/30 tracking-wider">進球</span>
           <span>+1</span>
         </button>
@@ -233,6 +249,7 @@
         </div>
         <div class="my-1 flex flex-col items-center">
           <div id="mainTimer" class="font-hud text-5xl sm:text-6xl font-black tracking-tight leading-none">03:00</div>
+          <div id="penaltyMeta" class="hidden mt-2 text-[11px] sm:text-xs font-black tracking-widest">第 1 球 · 藍方</div>
           <div class="w-40 sm:w-48 h-1.5 bg-black/15 rounded-full mt-2 overflow-hidden">
             <div id="timerProgressFill" class="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-rose-500 rounded-full w-full"></div>
           </div>
@@ -242,6 +259,7 @@
             <span id="timerBtnIcon">▶</span>
             <span id="timerBtnLabel">開始比賽</span>
           </button>
+          <button id="endPenaltyBtn" onclick="finishPenalty()" class="hidden w-full mt-2 py-2 px-4 rounded-xl bg-slate-900/80 active:scale-95 text-white font-bold text-xs tracking-wider border border-white/20">結束點球</button>
         </div>
       </div>
     </div>
@@ -255,6 +273,7 @@
     <header class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
       <button onclick="soundWhistle(true)" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-sky-300 font-bold">鳴哨</button>
       <button onclick="cycleTheme()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-amber-300 font-bold">🎨 <span id="themeNameTag">極簡白金</span></button>
+      <button onclick="jumpToPenalty()" class="px-2.5 py-1 rounded-full bg-amber-500/30 active:scale-95 text-xs text-amber-100 font-bold border border-amber-300/30">點球</button>
       <button onclick="resetMatch()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-slate-200 font-bold">重置</button>
       <button onclick="requestForceLandscape()" class="px-2.5 py-1 rounded-full bg-sky-500/30 active:scale-95 text-xs text-sky-100 font-bold border border-sky-400/30">⛶ 橫向</button>
     </header>
@@ -278,8 +297,19 @@
     var MATCH_SECONDS = 180;
     var remainingSeconds = 180;
     var timerRunning = false;
+    var matchStarted = false;
+    var mode = 'regulation';
+    var PENALTY_SECONDS = 10;
+    var penaltyRemaining = 10;
+    var penaltyIndex = 0;
+    var penaltyRunning = false;
+    var roundNumber = 1;
+    var pressedSide = null;
+    var rejectSide = null;
+    var rejectUntil = 0;
     var timerInterval = null;
     var countdownInterval = null;
+    var countdownArmTimer = null;
     var countdownSec = 5;
     var themes = [
       { id: 'theme-stadium', name: '極簡白金' },
@@ -395,8 +425,17 @@
       modal.classList.toggle('flex', show);
     }
 
+    function penaltySide() {
+      return penaltyIndex % 2 === 0 ? 'blue' : 'red';
+    }
+
     function toggleTimerWithProtocol() {
       getAudioCtx();
+      if (countdownInterval || countdownArmTimer) return;
+      if (mode === 'penalty') {
+        if (!penaltyRunning) startPenaltyShot();
+        return;
+      }
       if (timerRunning) {
         pauseTimer(true);
         return;
@@ -430,7 +469,8 @@
         numberEl.classList.toggle('is-phrase', startWord.length > 2);
         speakText(startWord, 1250);
         soundWhistle(true);
-        setTimeout(function () {
+        countdownArmTimer = setTimeout(function () {
+          countdownArmTimer = null;
           showCountdown(false);
           beginRunningTimer();
         }, 450);
@@ -442,12 +482,17 @@
         clearInterval(countdownInterval);
         countdownInterval = null;
       }
+      if (countdownArmTimer) {
+        clearTimeout(countdownArmTimer);
+        countdownArmTimer = null;
+      }
       showCountdown(false);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     }
 
     function beginRunningTimer() {
       if (remainingSeconds <= 0) remainingSeconds = MATCH_SECONDS;
+      matchStarted = true;
       timerRunning = true;
       updateTimerUIState();
       clearInterval(timerInterval);
@@ -458,10 +503,11 @@
         if (remainingSeconds === 30) speakText('最後三十秒', 920);
         if (remainingSeconds > 0 && remainingSeconds <= 10) speakText(COUNT_WORDS[remainingSeconds], 820 + (10 - remainingSeconds) * 40);
         if (remainingSeconds === 0) {
-          pauseTimer(false);
+          timerRunning = false;
+          clearInterval(timerInterval);
+          timerInterval = null;
           soundWhistle(true);
-          speakText('時間到，比賽結束');
-          document.getElementById('liveStatusText').textContent = '時間到';
+          enterPenaltyMode(true);
         }
       }, 1000);
     }
@@ -477,13 +523,88 @@
     }
 
     function renderTimerDisplay() {
+      var timerEl = document.getElementById('mainTimer');
+      var fillEl = document.getElementById('timerProgressFill');
+      if (mode === 'penalty') {
+        timerEl.textContent = '00:' + String(penaltyRemaining).padStart(2, '0');
+        fillEl.style.width = ((penaltyRemaining / PENALTY_SECONDS) * 100) + '%';
+        timerEl.classList.toggle('text-rose-500', penaltyRunning && penaltyRemaining <= 3);
+        return;
+      }
       var minutes = Math.floor(remainingSeconds / 60);
       var seconds = remainingSeconds % 60;
-      var timerEl = document.getElementById('mainTimer');
       timerEl.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-      var fillEl = document.getElementById('timerProgressFill');
       fillEl.style.width = ((remainingSeconds / MATCH_SECONDS) * 100) + '%';
       timerEl.classList.toggle('text-rose-500', remainingSeconds <= 10 && remainingSeconds > 0);
+    }
+
+    function jumpToPenalty() {
+      if (mode === 'penalty') return;
+      getAudioCtx();
+      timerRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      cancelCountdown();
+      soundWhistle(true);
+      enterPenaltyMode(false);
+    }
+
+    function enterPenaltyMode(fromClock) {
+      mode = 'penalty';
+      penaltyRunning = false;
+      penaltyIndex = 0;
+      penaltyRemaining = PENALTY_SECONDS;
+      pressedSide = null;
+      renderTimerDisplay();
+      updateTimerUIState();
+      speakText(fromClock === false ? '進入點球' : '時間到，進入點球');
+    }
+
+    function startPenaltyShot() {
+      if (mode !== 'penalty' || penaltyRunning) return;
+      penaltyRunning = true;
+      penaltyRemaining = PENALTY_SECONDS;
+      var sideName = penaltySide() === 'blue' ? '藍方點球' : '紅方點球';
+      speakText(sideName, 880);
+      soundWhistle(false);
+      renderTimerDisplay();
+      updateTimerUIState();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(function () {
+        if (penaltyRemaining <= 0) return;
+        penaltyRemaining -= 1;
+        renderTimerDisplay();
+        if (penaltyRemaining > 0 && penaltyRemaining <= 3) playBeep(820 + (3 - penaltyRemaining) * 40);
+        if (penaltyRemaining === 0) finishPenaltyShot();
+      }, 1000);
+    }
+
+    function finishPenaltyShot() {
+      penaltyRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      pressedSide = null;
+      penaltyIndex += 1;
+      penaltyRemaining = PENALTY_SECONDS;
+      soundWhistle(false);
+      renderTimerDisplay();
+      updateTimerUIState();
+    }
+
+    function finishPenalty() {
+      if (mode !== 'penalty' || penaltyRunning) return;
+      mode = 'regulation';
+      penaltyRunning = false;
+      penaltyIndex = 0;
+      penaltyRemaining = PENALTY_SECONDS;
+      matchStarted = false;
+      remainingSeconds = MATCH_SECONDS;
+      roundNumber += 1;
+      pressedSide = null;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      renderTimerDisplay();
+      updateTimerUIState();
     }
 
     function updateTimerUIState() {
@@ -491,26 +612,98 @@
       var label = document.getElementById('timerBtnLabel');
       var statusDot = document.getElementById('liveStatusDot');
       var statusText = document.getElementById('liveStatusText');
-      if (timerRunning) {
+      var toggleBtn = document.getElementById('timerToggleBtn');
+      var penaltyMeta = document.getElementById('penaltyMeta');
+      var endPenaltyBtn = document.getElementById('endPenaltyBtn');
+      if (mode === 'penalty') {
+        var sideName = penaltySide() === 'blue' ? '藍方' : '紅方';
+        icon.textContent = penaltyRunning ? '●' : '▶';
+        label.textContent = penaltyRunning ? '點球進行中' : (penaltyIndex === 0 ? '開始點球' : '下一球');
+        statusDot.className = penaltyRunning
+          ? 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping'
+          : 'w-2.5 h-2.5 rounded-full bg-amber-400';
+        statusText.textContent = '點球大賽';
+        toggleBtn.disabled = penaltyRunning;
+        penaltyMeta.textContent = '第 ' + (penaltyIndex + 1) + ' 球 · ' + sideName;
+        penaltyMeta.classList.remove('hidden');
+        endPenaltyBtn.classList.toggle('hidden', penaltyRunning);
+      } else if (timerRunning) {
         icon.textContent = '⏸';
         label.textContent = '暫停比賽';
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
         statusText.textContent = '計時中';
+        toggleBtn.disabled = false;
+        penaltyMeta.classList.add('hidden');
+        endPenaltyBtn.classList.add('hidden');
       } else if (remainingSeconds === 0) {
         icon.textContent = '▶';
         label.textContent = '開始比賽';
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
         statusText.textContent = '時間到';
+        toggleBtn.disabled = false;
+        penaltyMeta.classList.add('hidden');
+        endPenaltyBtn.classList.add('hidden');
       } else {
         icon.textContent = '▶';
-        label.textContent = remainingSeconds < MATCH_SECONDS ? '繼續比賽' : '開始比賽';
+        label.textContent = remainingSeconds < MATCH_SECONDS ? '繼續比賽' : (roundNumber > 1 ? '下一回合' : '開始比賽');
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
-        statusText.textContent = '準備中';
+        statusText.textContent = remainingSeconds < MATCH_SECONDS
+          ? '暫停中'
+          : (roundNumber > 1 ? '第 ' + roundNumber + ' 回合' : '準備中');
+        toggleBtn.disabled = false;
+        penaltyMeta.classList.add('hidden');
+        endPenaltyBtn.classList.add('hidden');
       }
+      syncScoreLock();
+    }
+
+    function canScore(team) {
+      if (mode === 'penalty') return penaltyRunning && penaltySide() === team;
+      return matchStarted;
+    }
+
+    function sideTemporarilyBlocked() {
+      return false;
+    }
+
+    function claimScoreSide() {}
+
+    function refreshSideMute() {
+      var inPenalty = mode === 'penalty';
+      document.getElementById('blueCourt').classList.toggle('side-muted', inPenalty && penaltySide() !== 'blue');
+      document.getElementById('redCourt').classList.toggle('side-muted', inPenalty && penaltySide() !== 'red');
+    }
+
+    function hintFor(team) {
+      if (mode === 'penalty') {
+        if (penaltySide() !== team) return '本局不能點這邊';
+        return penaltyRunning ? '點球中，點畫面得分' : '輪到這邊，按開始點球';
+      }
+      if (!matchStarted) return '開始比賽後才能得分';
+      return team === 'blue' ? '藍方得分，點畫面 +1' : '紅方得分，點畫面 +1';
+    }
+
+    function syncScoreLock() {
+      var buttons = document.querySelectorAll('.score-btn');
+      var anyOpen = false;
+      for (var i = 0; i < buttons.length; i++) {
+        var open = canScore(buttons[i].getAttribute('data-team'));
+        buttons[i].disabled = !open;
+        if (open) anyOpen = true;
+      }
+      document.body.classList.toggle('score-locked', !anyOpen);
+      document.getElementById('blueCourt').classList.toggle('court-open', canScore('blue'));
+      document.getElementById('redCourt').classList.toggle('court-open', canScore('red'));
+      var hints = document.querySelectorAll('.score-hint');
+      for (var j = 0; j < hints.length; j++) {
+        hints[j].textContent = hintFor(hints[j].getAttribute('data-team'));
+      }
+      refreshSideMute();
     }
 
     function handleCourtClick(event, team) {
       if (event.target.closest('button')) return;
+      if (!canScore(team) || sideTemporarilyBlocked(team)) return;
       createRipple(event, team);
       changeScore(team, 1);
     }
@@ -529,9 +722,12 @@
     }
 
     function changeScore(team, delta) {
+      if (!canScore(team) || sideTemporarilyBlocked(team)) return;
+      var current = team === 'blue' ? blueScore : redScore;
+      var next = Math.max(0, current + delta);
+      if (next === current) return;
       playBeep(team === 'blue' ? 950 : 1080);
       if (navigator.vibrate) navigator.vibrate(25);
-      var next = Math.max(0, (team === 'blue' ? blueScore : redScore) + delta);
       if (team === 'blue') blueScore = next;
       else redScore = next;
       var el = document.getElementById(team === 'blue' ? 'blueScore' : 'redScore');
@@ -542,10 +738,18 @@
     }
 
     function resetMatch() {
+      mode = 'regulation';
+      penaltyRunning = false;
+      penaltyIndex = 0;
+      penaltyRemaining = PENALTY_SECONDS;
+      roundNumber = 1;
+      pressedSide = null;
+      rejectSide = null;
       pauseTimer();
       cancelCountdown();
       blueScore = 0;
       redScore = 0;
+      matchStarted = false;
       remainingSeconds = MATCH_SECONDS;
       document.getElementById('blueScore').textContent = '0';
       document.getElementById('redScore').textContent = '0';
@@ -558,6 +762,7 @@
       var theme = themes[currentThemeIndex];
       document.body.className = theme.id + ' w-screen h-screen flex flex-col overflow-hidden';
       document.getElementById('themeNameTag').textContent = theme.name;
+      syncScoreLock();
     }
 
     function requestForceLandscape() {
