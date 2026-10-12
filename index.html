@@ -170,6 +170,18 @@
       filter: saturate(0.55) brightness(0.72);
       pointer-events: none;
     }
+    .foul-panel {
+      pointer-events: auto;
+      filter: none;
+    }
+    .foul-num {
+      font-variant-numeric: tabular-nums;
+      min-width: 1.4em;
+      text-align: center;
+    }
+    .foul-btn:active {
+      transform: scale(0.94);
+    }
   </style>
 </head>
 <body class="theme-stadium score-locked w-screen h-screen flex flex-col overflow-hidden">
@@ -197,12 +209,20 @@
 
   <main class="relative flex-1 w-full h-full flex flex-row overflow-hidden">
     <section id="blueCourt" onpointerdown="claimScoreSide(event, 'blue')" onclick="handleCourtClick(event, 'blue')" class="pitch-zone-blue relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
-      <div class="relative z-10 flex items-center justify-between pointer-events-none">
-        <div class="flex items-center gap-2">
+      <div class="relative z-20 flex flex-col items-start gap-2">
+        <div class="flex items-center gap-2 pointer-events-none">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-sky-400/40 text-sky-200 text-xs font-hud font-bold tracking-wider">
             <span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>
             藍邊
           </span>
+        </div>
+        <div class="foul-panel inline-flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-black/45 border border-amber-300/35 shadow-lg" onclick="event.stopPropagation()">
+          <span class="text-[11px] sm:text-xs font-black tracking-widest text-amber-200/95">犯規</span>
+          <b id="blueFoul" class="foul-num font-score text-2xl sm:text-3xl leading-none text-white">0</b>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="event.stopPropagation(); changeFoul('blue', 1)" class="foul-btn w-9 h-9 rounded-xl bg-amber-500/85 text-slate-950 font-black text-lg border border-amber-200/50" aria-label="藍邊加犯規">+</button>
+            <button type="button" onclick="event.stopPropagation(); changeFoul('blue', -1)" class="foul-btn w-9 h-9 rounded-xl bg-black/45 text-amber-100 font-black text-lg border border-amber-300/35" aria-label="藍邊減犯規">−</button>
+          </div>
         </div>
       </div>
       <div class="score-block score-block-blue relative z-10 my-auto pointer-events-none">
@@ -219,12 +239,20 @@
     </section>
 
     <section id="redCourt" onpointerdown="claimScoreSide(event, 'red')" onclick="handleCourtClick(event, 'red')" class="pitch-zone-red relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
-      <div class="relative z-10 flex items-center justify-between pointer-events-none">
-        <div class="flex items-center gap-2 ml-auto">
+      <div class="relative z-20 flex flex-col items-end gap-2">
+        <div class="flex items-center gap-2 pointer-events-none">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-rose-400/40 text-rose-200 text-xs font-hud font-bold tracking-wider">
             紅邊
             <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
           </span>
+        </div>
+        <div class="foul-panel inline-flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-black/45 border border-amber-300/35 shadow-lg" onclick="event.stopPropagation()">
+          <span class="text-[11px] sm:text-xs font-black tracking-widest text-amber-200/95">犯規</span>
+          <b id="redFoul" class="foul-num font-score text-2xl sm:text-3xl leading-none text-white">0</b>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="event.stopPropagation(); changeFoul('red', -1)" class="foul-btn w-9 h-9 rounded-xl bg-black/45 text-amber-100 font-black text-lg border border-amber-300/35" aria-label="紅邊減犯規">−</button>
+            <button type="button" onclick="event.stopPropagation(); changeFoul('red', 1)" class="foul-btn w-9 h-9 rounded-xl bg-amber-500/85 text-slate-950 font-black text-lg border border-amber-200/50" aria-label="紅邊加犯規">+</button>
+          </div>
         </div>
       </div>
       <div class="score-block score-block-red relative z-10 my-auto pointer-events-none">
@@ -298,6 +326,8 @@
   <script>
     var blueScore = 0;
     var redScore = 0;
+    var blueFoul = 0;
+    var redFoul = 0;
     var MATCH_SECONDS = 180;
     var remainingSeconds = 180;
     var timerRunning = false;
@@ -779,6 +809,21 @@
       el.classList.add('score-pop');
     }
 
+    function changeFoul(team, delta) {
+      var current = team === 'blue' ? blueFoul : redFoul;
+      var next = Math.max(0, Math.min(99, current + delta));
+      if (next === current) return;
+      playBeep(delta > 0 ? 620 : 480);
+      if (navigator.vibrate) navigator.vibrate(18);
+      if (team === 'blue') blueFoul = next;
+      else redFoul = next;
+      var el = document.getElementById(team === 'blue' ? 'blueFoul' : 'redFoul');
+      el.textContent = String(next);
+      el.classList.remove('score-pop');
+      void el.offsetWidth;
+      el.classList.add('score-pop');
+    }
+
     function resetMatch() {
       mode = 'regulation';
       penaltyRunning = false;
@@ -792,10 +837,14 @@
       cancelCountdown();
       blueScore = 0;
       redScore = 0;
+      blueFoul = 0;
+      redFoul = 0;
       matchStarted = false;
       remainingSeconds = MATCH_SECONDS;
       document.getElementById('blueScore').textContent = '0';
       document.getElementById('redScore').textContent = '0';
+      document.getElementById('blueFoul').textContent = '0';
+      document.getElementById('redFoul').textContent = '0';
       renderTimerDisplay();
       updateTimerUIState();
     }
