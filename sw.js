@@ -1,4 +1,4 @@
-var CACHE = 'drone-score-v2';
+var CACHE = 'drone-score-v3';
 var APP_FILES = [
   './',
   './index.html',
