@@ -13,9 +13,6 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Teko:wght@600;700&family=Noto+Sans+TC:wght@600;800;900&display=swap" rel="stylesheet">
 
   <style>
     * {
@@ -32,11 +29,19 @@
       height: 100vh;
       overflow: hidden;
       background-color: #050811;
-      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Segoe UI", sans-serif;
     }
 
-    .font-hud { font-family: Orbitron, Bahnschrift, ui-monospace, monospace; }
-    .font-score { font-family: Teko, Bahnschrift, "Arial Narrow", sans-serif; }
+    /* 本機系統字型近似原 HUD／分數樣式，不再外連 Google Fonts */
+    .font-hud {
+      font-family: Bahnschrift, "Segoe UI", ui-monospace, monospace;
+      letter-spacing: 0.04em;
+    }
+    .font-score {
+      font-family: Bahnschrift, "Arial Narrow", "Segoe UI", sans-serif;
+      font-stretch: condensed;
+      letter-spacing: 0.02em;
+    }
 
     body.theme-cyber {
       --blue-bg: radial-gradient(circle at 15% 50%, #0048b3 0%, #03256c 60%, #011438 100%);
