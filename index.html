@@ -436,6 +436,36 @@
       } catch (err) {}
     }
 
+    function speakQueue(parts, freq) {
+      if (!parts || !parts.length) return;
+      if (freq) playBeep(freq);
+      if (!window.speechSynthesis) return;
+      try {
+        refreshVoices();
+        window.speechSynthesis.cancel();
+        var index = 0;
+        function speakNext() {
+          if (index >= parts.length) return;
+          var utter = new SpeechSynthesisUtterance(parts[index]);
+          utter.lang = 'zh-TW';
+          utter.rate = 1.1;
+          if (chineseVoice) utter.voice = chineseVoice;
+          index += 1;
+          utter.onend = speakNext;
+          utter.onerror = speakNext;
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(utter);
+        }
+        setTimeout(speakNext, 40);
+      } catch (err) {}
+    }
+
+    function speakTimeUpThenLand(extraAfter) {
+      var parts = ['時間到', '降落！降落！降落！'];
+      if (extraAfter) parts.push(extraAfter);
+      speakQueue(parts, 900);
+    }
+
     if (window.speechSynthesis) {
       refreshVoices();
       window.speechSynthesis.onvoiceschanged = refreshVoices;
@@ -813,7 +843,7 @@
           soundWhistle(true);
           if (mode === 'brush') {
             updateTimerUIState();
-            speakText('時間到', 900);
+            speakTimeUpThenLand();
             return;
           }
           enterPenaltyMode(true);
@@ -867,7 +897,8 @@
       pressedSide = null;
       renderTimerDisplay();
       updateTimerUIState();
-      speakText(fromClock === false ? '進入點球' : '時間到，進入點球');
+      if (fromClock === false) speakText('進入點球');
+      else speakTimeUpThenLand('進入點球');
     }
 
     function startPenaltyShot() {
