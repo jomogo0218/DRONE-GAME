@@ -139,7 +139,44 @@
 
     #orientGuideModal { display: none; }
     @media (orientation: portrait) {
-      #orientGuideModal { display: flex !important; }
+      body:not(.mode-brush) #orientGuideModal { display: flex !important; }
+    }
+    @media (orientation: landscape) {
+      body.mode-brush #orientGuideModal { display: flex !important; }
+    }
+
+    body.mode-brush main {
+      flex-direction: column;
+    }
+    body.mode-brush .court-divider {
+      width: 100%;
+      height: 3px;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    body.mode-brush .score-block-blue,
+    body.mode-brush .score-block-red {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    body.mode-brush .score-num {
+      font-size: clamp(96px, 22vh, 180px);
+    }
+    body.mode-brush .foul-panel {
+      display: none;
+    }
+    body.mode-brush #penaltyJumpBtn,
+    body.mode-brush #orientLockBtn {
+      display: none;
+    }
+    body.mode-brush .hud-island {
+      width: min(220px, 68vw);
+      padding: 0.85rem 1rem;
+    }
+    body.mode-brush #mainTimer {
+      font-size: clamp(2.4rem, 9vw, 3.4rem);
     }
     @keyframes phoneRotateAnim {
       0%, 15% { transform: rotate(0deg); }
@@ -188,21 +225,21 @@
 
   <div id="orientGuideModal" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center text-white">
     <div class="max-w-xs w-full flex flex-col items-center">
-      <div class="w-20 h-28 border-4 border-sky-400 rounded-2xl flex items-center justify-center relative mb-6 shadow-[0_0_30px_rgba(56,189,248,0.4)] phone-rotate-icon">
+      <div id="orientGuideIcon" class="w-20 h-28 border-4 border-sky-400 rounded-2xl flex items-center justify-center relative mb-6 shadow-[0_0_30px_rgba(56,189,248,0.4)] phone-rotate-icon">
         <span class="w-2 h-2 rounded-full bg-sky-400/80 absolute top-2"></span>
         <span class="text-2xl font-black text-sky-300">↻</span>
         <span class="w-6 h-1 rounded-full bg-sky-400/80 absolute bottom-2"></span>
       </div>
-      <div class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-hud font-bold border border-sky-400/40 uppercase tracking-widest mb-2">
+      <div id="orientGuideBadge" class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-hud font-bold border border-sky-400/40 uppercase tracking-widest mb-2">
         請轉成橫向
       </div>
-      <h2 class="text-2xl font-black text-white mb-2 tracking-wide">請將手機轉為橫向螢幕</h2>
-      <p class="text-sm text-slate-300 leading-relaxed mb-6">
+      <h2 id="orientGuideTitle" class="text-2xl font-black text-white mb-2 tracking-wide">請將手機轉為橫向螢幕</h2>
+      <p id="orientGuideText" class="text-sm text-slate-300 leading-relaxed mb-6">
         計分板是左藍右紅。請把手機轉橫，或打開自動旋轉。
       </p>
-      <button onclick="requestForceLandscape()" class="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 active:scale-95 text-white font-black text-base shadow-lg border border-sky-300/40 transition flex items-center justify-center gap-2">
+      <button id="orientGuideAction" onclick="requestForceOrientation()" class="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 active:scale-95 text-white font-black text-base shadow-lg border border-sky-300/40 transition flex items-center justify-center gap-2">
         <span>⛶</span>
-        <span>鎖定橫向全螢幕</span>
+        <span id="orientGuideActionLabel">鎖定橫向全螢幕</span>
       </button>
     </div>
   </div>
@@ -302,12 +339,13 @@
         <span class="w-px h-3 bg-white/35"></span>
         <span class="font-hud text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-sky-200">CHSH DRONE TEAM</span>
       </div>
-    <header class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+    <header class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg flex-wrap justify-center max-w-[96vw]">
       <button onclick="soundWhistle(true)" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-sky-300 font-bold">鳴哨</button>
       <button onclick="cycleTheme()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-amber-300 font-bold">🎨 <span id="themeNameTag">極簡白金</span></button>
-      <button onclick="jumpToPenalty()" class="px-2.5 py-1 rounded-full bg-amber-500/30 active:scale-95 text-xs text-amber-100 font-bold border border-amber-300/30">點球</button>
+      <button id="brushModeBtn" onclick="toggleBrushMode()" class="px-2.5 py-1 rounded-full bg-emerald-500/30 active:scale-95 text-xs text-emerald-100 font-bold border border-emerald-300/35">刷球</button>
+      <button id="penaltyJumpBtn" onclick="jumpToPenalty()" class="px-2.5 py-1 rounded-full bg-amber-500/30 active:scale-95 text-xs text-amber-100 font-bold border border-amber-300/30">點球</button>
       <button onclick="resetMatch()" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-slate-200 font-bold">重置</button>
-      <button onclick="requestForceLandscape()" class="px-2.5 py-1 rounded-full bg-sky-500/30 active:scale-95 text-xs text-sky-100 font-bold border border-sky-400/30">⛶ 橫向</button>
+      <button id="orientLockBtn" onclick="requestForceOrientation()" class="px-2.5 py-1 rounded-full bg-sky-500/30 active:scale-95 text-xs text-sky-100 font-bold border border-sky-400/30">⛶ 橫向</button>
     </header>
     </div>
   </main>
@@ -328,6 +366,8 @@
     var redScore = 0;
     var blueFoul = 0;
     var redFoul = 0;
+    var REGULATION_SECONDS = 180;
+    var BRUSH_SECONDS = 60;
     var MATCH_SECONDS = 180;
     var remainingSeconds = 180;
     var timerRunning = false;
@@ -472,6 +512,123 @@
       } catch (err) {}
     }
 
+    function soundGoal(team) {
+      try {
+        var ctx = getAudioCtx();
+        if (!ctx) return;
+        var now = ctx.currentTime;
+        var base = team === 'blue' ? 660 : 740;
+        var notes = [base, base * 1.25, base * 1.5];
+        for (var i = 0; i < notes.length; i++) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          var t0 = now + i * 0.07;
+          osc.type = i === 2 ? 'triangle' : 'sine';
+          osc.frequency.setValueAtTime(notes[i], t0);
+          gain.gain.setValueAtTime(0.001, t0);
+          gain.gain.linearRampToValueAtTime(0.28, t0 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.28);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.3);
+        }
+      } catch (err) {}
+    }
+
+    function soundScoreDown() {
+      playBeep(420);
+    }
+
+    function applyBodyClasses() {
+      var theme = themes[currentThemeIndex];
+      var classes = [theme.id, 'w-screen', 'h-screen', 'flex', 'flex-col', 'overflow-hidden'];
+      if (mode === 'brush') classes.push('mode-brush');
+      if (document.body.classList.contains('score-locked')) classes.push('score-locked');
+      document.body.className = classes.join(' ');
+    }
+
+    function matchDuration() {
+      return mode === 'brush' ? BRUSH_SECONDS : REGULATION_SECONDS;
+    }
+
+    function syncOrientGuide() {
+      var brush = mode === 'brush';
+      document.getElementById('orientGuideBadge').textContent = brush ? '請轉成直向' : '請轉成橫向';
+      document.getElementById('orientGuideTitle').textContent = brush ? '請將手機轉為直向螢幕' : '請將手機轉為橫向螢幕';
+      document.getElementById('orientGuideText').textContent = brush
+        ? '刷球大賽採上藍下紅直向畫面，計時 1 分鐘。'
+        : '計分板是左藍右紅。請把手機轉橫，或打開自動旋轉。';
+      document.getElementById('orientGuideActionLabel').textContent = brush ? '鎖定直向全螢幕' : '鎖定橫向全螢幕';
+      var brushBtn = document.getElementById('brushModeBtn');
+      if (brushBtn) {
+        brushBtn.textContent = brush ? '退出刷球' : '刷球';
+        brushBtn.className = brush
+          ? 'px-2.5 py-1 rounded-full bg-emerald-400 active:scale-95 text-xs text-slate-950 font-black border border-emerald-100/70'
+          : 'px-2.5 py-1 rounded-full bg-emerald-500/30 active:scale-95 text-xs text-emerald-100 font-bold border border-emerald-300/35';
+      }
+    }
+
+    function toggleBrushMode() {
+      getAudioCtx();
+      if (mode === 'brush') {
+        exitBrushMode();
+        return;
+      }
+      enterBrushMode();
+    }
+
+    function enterBrushMode() {
+      pauseTimer();
+      cancelCountdown();
+      mode = 'brush';
+      MATCH_SECONDS = BRUSH_SECONDS;
+      remainingSeconds = BRUSH_SECONDS;
+      matchStarted = false;
+      penaltyRunning = false;
+      penaltyShooter = null;
+      penaltyIndex = 0;
+      blueScore = 0;
+      redScore = 0;
+      blueFoul = 0;
+      redFoul = 0;
+      document.getElementById('blueScore').textContent = '0';
+      document.getElementById('redScore').textContent = '0';
+      document.getElementById('blueFoul').textContent = '0';
+      document.getElementById('redFoul').textContent = '0';
+      applyBodyClasses();
+      syncOrientGuide();
+      renderTimerDisplay();
+      updateTimerUIState();
+      speakText('刷球大賽，一分鐘', 880);
+      requestForceOrientation();
+    }
+
+    function exitBrushMode() {
+      pauseTimer();
+      cancelCountdown();
+      mode = 'regulation';
+      MATCH_SECONDS = REGULATION_SECONDS;
+      remainingSeconds = REGULATION_SECONDS;
+      matchStarted = false;
+      penaltyRunning = false;
+      penaltyShooter = null;
+      penaltyIndex = 0;
+      blueScore = 0;
+      redScore = 0;
+      blueFoul = 0;
+      redFoul = 0;
+      document.getElementById('blueScore').textContent = '0';
+      document.getElementById('redScore').textContent = '0';
+      document.getElementById('blueFoul').textContent = '0';
+      document.getElementById('redFoul').textContent = '0';
+      applyBodyClasses();
+      syncOrientGuide();
+      renderTimerDisplay();
+      updateTimerUIState();
+      requestForceOrientation();
+    }
+
     function showCountdown(show) {
       var modal = document.getElementById('countdownModal');
       modal.classList.toggle('hidden', !show);
@@ -502,13 +659,26 @@
         pauseTimer(true);
         return;
       }
+      if (mode === 'brush' && remainingSeconds === 0) {
+        blueScore = 0;
+        redScore = 0;
+        document.getElementById('blueScore').textContent = '0';
+        document.getElementById('redScore').textContent = '0';
+        matchStarted = false;
+        remainingSeconds = BRUSH_SECONDS;
+        MATCH_SECONDS = BRUSH_SECONDS;
+        renderTimerDisplay();
+        updateTimerUIState();
+      }
       startCountdown5s();
     }
 
     function startCountdown5s() {
       var resuming = mode !== 'penalty' && remainingSeconds > 0 && remainingSeconds < MATCH_SECONDS;
       runCountdown5s({
-        phaseLabel: resuming ? '準備繼續' : '準備開賽',
+        phaseLabel: mode === 'brush'
+          ? (resuming ? '刷球繼續' : '刷球準備')
+          : (resuming ? '準備繼續' : '準備開賽'),
         hint: 'Arm your quads · Ready · 5-1 · Whistle',
         onDone: beginRunningTimer
       });
@@ -604,6 +774,11 @@
           clearInterval(timerInterval);
           timerInterval = null;
           soundWhistle(true);
+          if (mode === 'brush') {
+            updateTimerUIState();
+            speakText('時間到', 900);
+            return;
+          }
           enterPenaltyMode(true);
         }
       }, 1000);
@@ -636,7 +811,7 @@
     }
 
     function jumpToPenalty() {
-      if (mode === 'penalty') return;
+      if (mode === 'penalty' || mode === 'brush') return;
       getAudioCtx();
       timerRunning = false;
       clearInterval(timerInterval);
@@ -726,27 +901,29 @@
         endPenaltyBtn.classList.toggle('hidden', penaltyRunning);
       } else if (timerRunning) {
         icon.textContent = '⏸';
-        label.textContent = '暫停比賽';
+        label.textContent = mode === 'brush' ? '暫停刷球' : '暫停比賽';
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
-        statusText.textContent = '計時中';
+        statusText.textContent = mode === 'brush' ? '刷球計時中' : '計時中';
         toggleBtn.disabled = false;
         penaltyMeta.classList.add('hidden');
         endPenaltyBtn.classList.add('hidden');
       } else if (remainingSeconds === 0) {
         icon.textContent = '▶';
-        label.textContent = '開始比賽';
+        label.textContent = mode === 'brush' ? '再來一局' : '開始比賽';
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
-        statusText.textContent = '時間到';
+        statusText.textContent = mode === 'brush' ? '刷球結束' : '時間到';
         toggleBtn.disabled = false;
         penaltyMeta.classList.add('hidden');
         endPenaltyBtn.classList.add('hidden');
       } else {
         icon.textContent = '▶';
-        label.textContent = remainingSeconds < MATCH_SECONDS ? '繼續比賽' : (roundNumber > 1 ? '下一回合' : '開始比賽');
+        label.textContent = remainingSeconds < MATCH_SECONDS
+          ? (mode === 'brush' ? '繼續刷球' : '繼續比賽')
+          : (mode === 'brush' ? '開始刷球' : (roundNumber > 1 ? '下一回合' : '開始比賽'));
         statusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
         statusText.textContent = remainingSeconds < MATCH_SECONDS
           ? '暫停中'
-          : (roundNumber > 1 ? '第 ' + roundNumber + ' 回合' : '準備中');
+          : (mode === 'brush' ? '刷球大賽' : (roundNumber > 1 ? '第 ' + roundNumber + ' 回合' : '準備中'));
         toggleBtn.disabled = false;
         penaltyMeta.classList.add('hidden');
         endPenaltyBtn.classList.add('hidden');
@@ -759,6 +936,7 @@
 
     function canScore(team) {
       if (mode === 'penalty') return penaltyRunning && penaltySide() === team;
+      if (mode === 'brush') return matchStarted && timerRunning;
       return matchStarted;
     }
 
@@ -778,6 +956,11 @@
         if (!penaltyShooter) return '請在中間選擇點球方';
         if (penaltyShooter !== team) return '本局不能點這邊';
         return penaltyRunning ? '點球中，點畫面得分' : '倒數結束後才能得分';
+      }
+      if (mode === 'brush') {
+        if (!matchStarted) return '開始刷球後才能得分';
+        if (!timerRunning) return remainingSeconds === 0 ? '時間到，請重置再開' : '暫停中，無法得分';
+        return team === 'blue' ? '藍方刷球得分' : '紅方刷球得分';
       }
       if (!matchStarted) return '開始比賽後才能得分';
       return team === 'blue' ? '藍方得分，點畫面 +1' : '紅方得分，點畫面 +1';
@@ -826,8 +1009,9 @@
       var current = team === 'blue' ? blueScore : redScore;
       var next = Math.max(0, current + delta);
       if (next === current) return;
-      playBeep(team === 'blue' ? 950 : 1080);
-      if (navigator.vibrate) navigator.vibrate(25);
+      if (delta > 0) soundGoal(team);
+      else soundScoreDown();
+      if (navigator.vibrate) navigator.vibrate(delta > 0 ? 35 : 18);
       if (team === 'blue') blueScore = next;
       else redScore = next;
       var el = document.getElementById(team === 'blue' ? 'blueScore' : 'redScore');
@@ -853,7 +1037,7 @@
     }
 
     function resetMatch() {
-      mode = 'regulation';
+      var keepBrush = mode === 'brush';
       penaltyRunning = false;
       penaltyIndex = 0;
       penaltyShooter = null;
@@ -863,6 +1047,8 @@
       rejectSide = null;
       pauseTimer();
       cancelCountdown();
+      mode = keepBrush ? 'brush' : 'regulation';
+      MATCH_SECONDS = matchDuration();
       blueScore = 0;
       redScore = 0;
       blueFoul = 0;
@@ -873,6 +1059,8 @@
       document.getElementById('redScore').textContent = '0';
       document.getElementById('blueFoul').textContent = '0';
       document.getElementById('redFoul').textContent = '0';
+      applyBodyClasses();
+      syncOrientGuide();
       renderTimerDisplay();
       updateTimerUIState();
     }
@@ -880,18 +1068,23 @@
     function cycleTheme() {
       currentThemeIndex = (currentThemeIndex + 1) % themes.length;
       var theme = themes[currentThemeIndex];
-      document.body.className = theme.id + ' w-screen h-screen flex flex-col overflow-hidden';
       document.getElementById('themeNameTag').textContent = theme.name;
+      applyBodyClasses();
       syncScoreLock();
     }
 
-    function requestForceLandscape() {
+    function requestForceOrientation() {
       var root = document.documentElement;
       var request = root.requestFullscreen || root.webkitRequestFullscreen;
       var pending = request ? request.call(root) : Promise.resolve();
+      var orient = mode === 'brush' ? 'portrait' : 'landscape';
       Promise.resolve(pending).then(function () {
-        if (screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape');
+        if (screen.orientation && screen.orientation.lock) return screen.orientation.lock(orient);
       }).catch(function () {});
+    }
+
+    function requestForceLandscape() {
+      requestForceOrientation();
     }
 
     window.addEventListener('keydown', function (event) {
@@ -902,6 +1095,7 @@
       }
     });
 
+    syncOrientGuide();
     renderTimerDisplay();
     updateTimerUIState();
 
