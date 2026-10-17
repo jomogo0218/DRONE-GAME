@@ -290,7 +290,7 @@
       <div id="countdownPhaseLabel" class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
       <h2 class="text-xl font-black text-white tracking-wide">各就各位</h2>
       <div id="countdownNumber" class="font-hud text-9xl font-black text-amber-400 my-4 drop-shadow-[0_0_35px_rgba(251,191,36,0.9)]">5</div>
-      <p id="countdownHint" class="text-xs text-slate-300/80 mb-6">英文報數結束後鳴哨，3 分鐘計時才開始</p>
+      <p id="countdownHint" class="text-xs text-slate-300/80 mb-6">先念 Ready，再從 5 英文報數，結束後鳴哨</p>
       <button onclick="cancelCountdown()" class="py-2.5 px-6 rounded-xl bg-slate-800 active:scale-95 text-slate-200 text-xs font-bold border border-slate-600/70">取消倒數</button>
     </div>
   </div>
@@ -475,7 +475,7 @@
         startWord: resuming ? '繼續比賽' : '開賽',
         speakWord: resuming ? 'Resume' : 'Start',
         phaseLabel: resuming ? '準備繼續' : '準備開賽',
-        hint: '英文報數結束後鳴哨，3 分鐘計時才開始',
+        hint: '先念 Ready，再從 5 英文報數，結束後鳴哨',
         onDone: beginRunningTimer
       });
     }
@@ -488,7 +488,7 @@
         startWord: sideName,
         speakWord: sideWord,
         phaseLabel: '準備點球',
-        hint: '英文報數結束後鳴哨，10 秒點球才開始',
+        hint: '先念 Ready，再從 5 英文報數，結束後鳴哨',
         onDone: startPenaltyShot
       });
     }
@@ -498,11 +498,21 @@
       cancelCountdown();
       countdownSec = 5;
       var numberEl = document.getElementById('countdownNumber');
-      numberEl.classList.remove('is-phrase');
-      numberEl.textContent = '5';
+      numberEl.classList.add('is-phrase');
+      numberEl.textContent = 'Ready';
       document.getElementById('countdownPhaseLabel').textContent = options.phaseLabel;
       document.getElementById('countdownHint').textContent = options.hint;
       showCountdown(true);
+      speakText('Ready', 750, 'en');
+      countdownArmTimer = setTimeout(function () {
+        countdownArmTimer = null;
+        beginSpokenCountdown(options, numberEl);
+      }, 1000);
+    }
+
+    function beginSpokenCountdown(options, numberEl) {
+      numberEl.classList.remove('is-phrase');
+      numberEl.textContent = '5';
       speakText('five', 750, 'en');
       countdownInterval = setInterval(function () {
         countdownSec -= 1;
