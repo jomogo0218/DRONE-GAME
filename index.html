@@ -448,34 +448,46 @@
       } catch (err) {}
     }
 
+    var speakQueueTimer = null;
+
     function speakQueue(parts, freq) {
       if (!parts || !parts.length) return;
       if (freq) playBeep(freq);
       if (!window.speechSynthesis) return;
       try {
         refreshVoices();
-        window.speechSynthesis.cancel();
-        var index = 0;
-        function speakNext() {
-          if (index >= parts.length) return;
-          var utter = new SpeechSynthesisUtterance(parts[index]);
-          utter.lang = 'zh-TW';
-          utter.rate = 1.1;
-          if (chineseVoice) utter.voice = chineseVoice;
-          index += 1;
-          utter.onend = speakNext;
-          utter.onerror = speakNext;
-          window.speechSynthesis.resume();
-          window.speechSynthesis.speak(utter);
+        if (speakQueueTimer) {
+          clearTimeout(speakQueueTimer);
+          speakQueueTimer = null;
         }
-        setTimeout(speakNext, 40);
+        window.speechSynthesis.cancel();
+        // 一次排入整段佇列，避免手機瀏覽器 onend 串接下一段失敗
+        speakQueueTimer = setTimeout(function () {
+          speakQueueTimer = null;
+          window.speechSynthesis.resume();
+          for (var i = 0; i < parts.length; i++) {
+            var utter = new SpeechSynthesisUtterance(parts[i]);
+            utter.lang = 'zh-TW';
+            utter.rate = 1.05;
+            if (chineseVoice) utter.voice = chineseVoice;
+            window.speechSynthesis.speak(utter);
+          }
+        }, 80);
       } catch (err) {}
     }
 
     function speakTimeUpThenLand(extraAfter) {
-      var parts = ['時間到', '降落！降落！降落！'];
-      if (extraAfter) parts.push(extraAfter);
-      speakQueue(parts, 900);
+      // 合成單句較穩定；哨音後再播，避免被取消
+      var text = '時間到，降落！降落！降落！';
+      if (extraAfter) text += '，' + extraAfter;
+      if (speakQueueTimer) {
+        clearTimeout(speakQueueTimer);
+        speakQueueTimer = null;
+      }
+      speakQueueTimer = setTimeout(function () {
+        speakQueueTimer = null;
+        speakText(text, 900);
+      }, 700);
     }
 
     if (window.speechSynthesis) {
