@@ -161,13 +161,15 @@
       width: 100%;
       height: 100%;
       flex: 1 1 100%;
+      justify-content: flex-end;
+      gap: 0.65rem;
       background-image:
         radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0),
         radial-gradient(circle at 50% 30%, #0f766e 0%, #115e59 45%, #042f2e 100%);
       background-size: 24px 24px, 100% 100%;
-      /* 避開瀏海／動態島與底部 Home 指示條（safe-area 為 0 時也留保底下移） */
-      padding-top: max(5.75rem, calc(env(safe-area-inset-top, 0px) + 5.25rem)) !important;
-      padding-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem)) !important;
+      /* 上方留給標題＋大計時，分數與按鈕靠底部 */
+      padding-top: max(15rem, calc(env(safe-area-inset-top, 0px) + 14rem)) !important;
+      padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 1rem)) !important;
       padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
       padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
     }
@@ -175,13 +177,24 @@
       top: max(2.85rem, calc(env(safe-area-inset-top, 0px) + 0.4rem));
       max-width: calc(100vw - 1rem);
     }
+    body.mode-brush #blueCourt > div:first-child {
+      order: 1;
+      justify-content: center;
+      margin-bottom: 0.15rem;
+    }
     body.mode-brush .score-block-blue {
+      order: 2;
       padding-left: 0;
       padding-right: 0;
-      padding-bottom: 7rem;
+      padding-bottom: 0;
+      margin: 0 !important;
+    }
+    body.mode-brush #blueCourt > div:last-child {
+      order: 3;
+      margin-bottom: 0;
     }
     body.mode-brush .score-num {
-      font-size: clamp(100px, 24vh, 220px);
+      font-size: clamp(88px, 20vh, 180px);
     }
     body.mode-brush .blue-glow {
       text-shadow: 0 0 40px rgba(52, 211, 153, 0.85), 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -191,17 +204,24 @@
       display: none;
     }
     body.mode-brush #centerHud {
-      align-items: flex-end;
-      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: max(6.75rem, calc(env(safe-area-inset-top, 0px) + 5.75rem));
+      padding-bottom: 0;
       padding-left: env(safe-area-inset-left, 0px);
       padding-right: env(safe-area-inset-right, 0px);
     }
     body.mode-brush .hud-island {
-      width: min(240px, 78vw);
-      padding: 0.85rem 1rem;
+      width: min(340px, 92vw);
+      padding: 1rem 1.2rem 1.15rem;
     }
     body.mode-brush #mainTimer {
-      font-size: clamp(2.2rem, 9vw, 3rem);
+      font-size: clamp(4.2rem, 22vw, 7rem);
+      letter-spacing: -0.03em;
+      line-height: 0.9;
+    }
+    body.mode-brush #timerProgressTrack {
+      width: min(280px, 78vw);
     }
     body.mode-brush #blueTeamLabel {
       border-color: rgba(52, 211, 153, 0.45);
@@ -323,7 +343,7 @@
         <div class="my-1 flex flex-col items-center">
           <div id="mainTimer" class="font-hud text-5xl sm:text-6xl font-black tracking-tight leading-none">03:00</div>
           <div id="penaltyMeta" class="hidden mt-2 text-[11px] sm:text-xs font-black tracking-widest">第 1 球 · 藍方</div>
-          <div class="w-40 sm:w-48 h-1.5 bg-black/15 rounded-full mt-2 overflow-hidden">
+          <div id="timerProgressTrack" class="w-40 sm:w-48 h-1.5 bg-black/15 rounded-full mt-2 overflow-hidden">
             <div id="timerProgressFill" class="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-rose-500 rounded-full w-full"></div>
           </div>
         </div>
@@ -1246,7 +1266,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js?v=11').then(function (reg) {
+        navigator.serviceWorker.register('./sw.js?v=12').then(function (reg) {
           if (reg && reg.update) reg.update();
         }).catch(function () {});
       });
