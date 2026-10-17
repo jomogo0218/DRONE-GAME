@@ -153,39 +153,51 @@
     body.mode-brush main {
       flex-direction: column;
     }
-    body.mode-brush #blueCourt,
-    body.mode-brush #redCourt {
-      width: 100%;
-      height: auto;
-      min-height: 0;
-      flex: 1 1 50%;
-    }
+    body.mode-brush #redCourt,
     body.mode-brush .court-divider {
-      width: 100%;
-      height: 3px;
-      left: 0;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
+      display: none !important;
     }
-    body.mode-brush .score-block-blue,
-    body.mode-brush .score-block-red {
+    body.mode-brush #blueCourt {
+      width: 100%;
+      height: 100%;
+      flex: 1 1 100%;
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0),
+        radial-gradient(circle at 50% 30%, #0f766e 0%, #115e59 45%, #042f2e 100%);
+      background-size: 24px 24px, 100% 100%;
+    }
+    body.mode-brush .score-block-blue {
       padding-left: 0;
       padding-right: 0;
+      padding-bottom: 7rem;
     }
     body.mode-brush .score-num {
-      font-size: clamp(72px, 16vh, 140px);
+      font-size: clamp(120px, 28vh, 240px);
+    }
+    body.mode-brush .blue-glow {
+      text-shadow: 0 0 40px rgba(52, 211, 153, 0.85), 0 4px 15px rgba(0, 0, 0, 0.5);
     }
     body.mode-brush #penaltyJumpBtn,
     body.mode-brush #orientLockBtn {
       display: none;
     }
+    body.mode-brush #centerHud {
+      align-items: flex-end;
+      padding-bottom: 5.5rem;
+    }
     body.mode-brush .hud-island {
-      width: min(200px, 62vw);
-      padding: 0.7rem 0.85rem;
+      width: min(240px, 78vw);
+      padding: 0.85rem 1rem;
     }
     body.mode-brush #mainTimer {
-      font-size: clamp(2rem, 8vw, 2.8rem);
+      font-size: clamp(2.2rem, 9vw, 3rem);
+    }
+    body.mode-brush #blueTeamLabel {
+      border-color: rgba(52, 211, 153, 0.45);
+      color: #a7f3d0;
+    }
+    body.mode-brush .score-hint[data-team="blue"] {
+      color: rgba(167, 243, 208, 0.9);
     }
     @keyframes phoneRotateAnim {
       0%, 15% { transform: rotate(0deg); }
@@ -256,11 +268,11 @@
         <div id="blueScore" class="score-num font-score font-bold text-white blue-glow">0</div>
       </div>
       <div class="relative z-20 flex items-center justify-center gap-3 w-full max-w-xs mx-auto mb-1">
-        <button onclick="event.stopPropagation(); changeScore('blue', 1)" data-team="blue" disabled class="score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5">
+        <button id="bluePlusBtn" onclick="event.stopPropagation(); changeScore('blue', 1)" data-team="blue" disabled class="score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5">
           <span>+1</span>
           <span class="text-xs px-2 py-0.5 rounded-md bg-black/30 tracking-wider">進球</span>
         </button>
-        <button onclick="event.stopPropagation(); changeScore('blue', -1)" data-team="blue" disabled class="score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40">-1</button>
+        <button id="blueMinusBtn" onclick="event.stopPropagation(); changeScore('blue', -1)" data-team="blue" disabled class="score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40">-1</button>
       </div>
     </section>
 
@@ -286,7 +298,7 @@
       </div>
     </section>
 
-    <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
+    <div id="centerHud" class="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
       <div class="court-divider absolute w-1 sm:w-1.5 h-full"></div>
       <div class="pointer-events-auto hud-island relative w-[240px] sm:w-[280px] rounded-3xl p-4 sm:p-5 flex flex-col items-center justify-between text-center">
         <div class="flex items-center justify-center gap-2 mb-1 w-full">
@@ -541,7 +553,7 @@
         var ctx = getAudioCtx();
         if (!ctx) return;
         var now = ctx.currentTime;
-        var base = team === 'blue' ? 660 : 740;
+        var base = team === 'brush' ? 700 : (team === 'blue' ? 660 : 740);
         var notes = [base, base * 1.25, base * 1.5];
         for (var i = 0; i < notes.length; i++) {
           var osc = ctx.createOscillator();
@@ -581,7 +593,7 @@
       document.getElementById('orientGuideBadge').textContent = brush ? '請轉成直向' : '請轉成橫向';
       document.getElementById('orientGuideTitle').textContent = brush ? '請將手機轉為直向螢幕' : '請將手機轉為橫向螢幕';
       document.getElementById('orientGuideText').textContent = brush
-        ? '刷球大賽採上藍隊、下紅隊直向畫面，計時 1 分鐘。'
+        ? '刷球大賽為直向單人計分，計時 1 分鐘，點畫面即可得分。'
         : '計分板是左藍右紅。請把手機轉橫，或打開自動旋轉。';
       document.getElementById('orientGuideActionLabel').textContent = brush ? '鎖定直向全螢幕' : '鎖定橫向全螢幕';
       var brushBtn = document.getElementById('brushModeBtn');
@@ -594,16 +606,22 @@
       var orientBtn = document.getElementById('orientLockBtn');
       if (orientBtn) orientBtn.textContent = brush ? '⛶ 直向' : '⛶ 橫向';
       var blueLabel = document.getElementById('blueTeamLabel');
-      var redLabel = document.getElementById('redTeamLabel');
       if (blueLabel) {
         blueLabel.innerHTML = brush
-          ? '<span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>藍隊'
+          ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>刷球得分'
           : '<span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>藍邊';
       }
-      if (redLabel) {
-        redLabel.innerHTML = brush
-          ? '紅隊<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>'
-          : '紅邊<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>';
+      var bluePlus = document.getElementById('bluePlusBtn');
+      if (bluePlus) {
+        bluePlus.className = brush
+          ? 'score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-emerald-200/50 flex items-center justify-center gap-1.5'
+          : 'score-btn flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-600 active:scale-95 text-white font-black text-xl sm:text-2xl shadow-lg border border-sky-200/50 flex items-center justify-center gap-1.5';
+      }
+      var blueMinus = document.getElementById('blueMinusBtn');
+      if (blueMinus) {
+        blueMinus.className = brush
+          ? 'score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-emerald-200 text-xl sm:text-2xl font-black border border-emerald-400/40'
+          : 'score-btn w-14 sm:w-16 py-3 rounded-2xl bg-black/45 active:scale-95 text-sky-200 text-xl sm:text-2xl font-black border border-sky-400/40';
       }
     }
 
@@ -1004,7 +1022,7 @@
 
     function canScore(team) {
       if (mode === 'penalty') return penaltyRunning && penaltySide() === team;
-      if (mode === 'brush') return matchStarted && timerRunning;
+      if (mode === 'brush') return team === 'blue' && matchStarted && timerRunning;
       return matchStarted;
     }
 
@@ -1026,9 +1044,10 @@
         return penaltyRunning ? '點球中，點畫面得分' : '倒數結束後才能得分';
       }
       if (mode === 'brush') {
+        if (team !== 'blue') return '';
         if (!matchStarted) return '開始刷球後才能得分';
         if (!timerRunning) return remainingSeconds === 0 ? '時間到，請再來一局' : '暫停中，無法得分';
-        return team === 'blue' ? '藍方刷球得分' : '紅方刷球得分';
+        return '點畫面或按 +1 得分';
       }
       if (!matchStarted) return '開始比賽後才能得分';
       return team === 'blue' ? '藍方得分，點畫面 +1' : '紅方得分，點畫面 +1';
@@ -1074,10 +1093,11 @@
 
     function changeScore(team, delta) {
       if (!canScore(team) || sideTemporarilyBlocked(team)) return;
+      if (mode === 'brush') team = 'blue';
       var current = team === 'blue' ? blueScore : redScore;
       var next = Math.max(0, current + delta);
       if (next === current) return;
-      if (delta > 0) soundGoal(team);
+      if (delta > 0) soundGoal(mode === 'brush' ? 'brush' : team);
       else soundScoreDown();
       if (navigator.vibrate) navigator.vibrate(delta > 0 ? 35 : 18);
       if (team === 'blue') blueScore = next;
