@@ -175,7 +175,33 @@
     }
     body.mode-brush #topChrome {
       top: max(2.85rem, calc(env(safe-area-inset-top, 0px) + 0.4rem));
-      max-width: calc(100vw - 1rem);
+      width: min(96vw, 720px);
+      max-width: calc(100vw - 0.75rem);
+    }
+    body.mode-brush #brandBar {
+      width: 100%;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.9rem;
+      box-sizing: border-box;
+    }
+    body.mode-brush #brandSchool {
+      font-size: clamp(15px, 4.8vw, 24px);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    body.mode-brush #brandTeam {
+      font-size: clamp(13px, 4.2vw, 20px);
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+    body.mode-brush #brandBar .brand-sep {
+      height: 1.1em;
+    }
+    body.mode-brush #topChrome > header {
+      width: 100%;
+      max-width: 100%;
+      justify-content: center;
     }
     body.mode-brush #blueCourt > div:first-child {
       order: 1;
@@ -372,10 +398,10 @@
     </div>
 
     <div id="topChrome" class="absolute top-2 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5">
-      <div class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-lg flex items-center gap-2 text-white">
-        <span class="text-[11px] sm:text-xs font-black tracking-wide">嘉華中學</span>
-        <span class="w-px h-3 bg-white/35"></span>
-        <span class="font-hud text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-sky-200">CHSH DRONE TEAM</span>
+      <div id="brandBar" class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-lg flex items-center gap-2 text-white">
+        <span id="brandSchool" class="text-[11px] sm:text-xs font-black tracking-wide">嘉華中學</span>
+        <span class="brand-sep w-px h-3 bg-white/35"></span>
+        <span id="brandTeam" class="font-hud text-[10px] sm:text-[11px] font-bold tracking-[0.16em] text-sky-200">CHSH DRONE TEAM</span>
       </div>
     <header class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-lg flex-wrap justify-center max-w-[96vw]">
       <button onclick="soundWhistle(true)" class="px-2.5 py-1 rounded-full bg-white/10 active:scale-95 text-xs text-sky-300 font-bold">鳴哨</button>
@@ -1276,7 +1302,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js?v=13').then(function (reg) {
+        navigator.serviceWorker.register('./sw.js?v=14').then(function (reg) {
           if (reg && reg.update) reg.update();
         }).catch(function () {});
       });
