@@ -153,6 +153,13 @@
     body.mode-brush main {
       flex-direction: column;
     }
+    body.mode-brush #blueCourt,
+    body.mode-brush #redCourt {
+      width: 100%;
+      height: auto;
+      min-height: 0;
+      flex: 1 1 50%;
+    }
     body.mode-brush .court-divider {
       width: 100%;
       height: 3px;
@@ -167,18 +174,18 @@
       padding-right: 0;
     }
     body.mode-brush .score-num {
-      font-size: clamp(96px, 22vh, 180px);
+      font-size: clamp(72px, 16vh, 140px);
     }
     body.mode-brush #penaltyJumpBtn,
     body.mode-brush #orientLockBtn {
       display: none;
     }
     body.mode-brush .hud-island {
-      width: min(220px, 68vw);
-      padding: 0.85rem 1rem;
+      width: min(200px, 62vw);
+      padding: 0.7rem 0.85rem;
     }
     body.mode-brush #mainTimer {
-      font-size: clamp(2.4rem, 9vw, 3.4rem);
+      font-size: clamp(2rem, 8vw, 2.8rem);
     }
     @keyframes phoneRotateAnim {
       0%, 15% { transform: rotate(0deg); }
@@ -238,7 +245,7 @@
     <section id="blueCourt" onpointerdown="claimScoreSide(event, 'blue')" onclick="handleCourtClick(event, 'blue')" class="pitch-zone-blue relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
       <div class="relative z-10 flex items-center justify-between pointer-events-none">
         <div class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-sky-400/40 text-sky-200 text-xs font-hud font-bold tracking-wider">
+          <span id="blueTeamLabel" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-sky-400/40 text-sky-200 text-xs font-hud font-bold tracking-wider">
             <span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>
             藍邊
           </span>
@@ -260,7 +267,7 @@
     <section id="redCourt" onpointerdown="claimScoreSide(event, 'red')" onclick="handleCourtClick(event, 'red')" class="pitch-zone-red relative flex-1 h-full flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
       <div class="relative z-10 flex items-center justify-between pointer-events-none">
         <div class="flex items-center gap-2 ml-auto">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-rose-400/40 text-rose-200 text-xs font-hud font-bold tracking-wider">
+          <span id="redTeamLabel" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-rose-400/40 text-rose-200 text-xs font-hud font-bold tracking-wider">
             紅邊
             <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
           </span>
@@ -544,7 +551,7 @@
       document.getElementById('orientGuideBadge').textContent = brush ? '請轉成直向' : '請轉成橫向';
       document.getElementById('orientGuideTitle').textContent = brush ? '請將手機轉為直向螢幕' : '請將手機轉為橫向螢幕';
       document.getElementById('orientGuideText').textContent = brush
-        ? '刷球大賽採上藍下紅直向畫面，計時 1 分鐘。'
+        ? '刷球大賽採上藍隊、下紅隊直向畫面，計時 1 分鐘。'
         : '計分板是左藍右紅。請把手機轉橫，或打開自動旋轉。';
       document.getElementById('orientGuideActionLabel').textContent = brush ? '鎖定直向全螢幕' : '鎖定橫向全螢幕';
       var brushBtn = document.getElementById('brushModeBtn');
@@ -556,6 +563,18 @@
       }
       var orientBtn = document.getElementById('orientLockBtn');
       if (orientBtn) orientBtn.textContent = brush ? '⛶ 直向' : '⛶ 橫向';
+      var blueLabel = document.getElementById('blueTeamLabel');
+      var redLabel = document.getElementById('redTeamLabel');
+      if (blueLabel) {
+        blueLabel.innerHTML = brush
+          ? '<span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>藍隊'
+          : '<span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]"></span>藍邊';
+      }
+      if (redLabel) {
+        redLabel.innerHTML = brush
+          ? '紅隊<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>'
+          : '紅邊<span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>';
+      }
     }
 
     function toggleBrushMode() {
