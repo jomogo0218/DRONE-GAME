@@ -449,45 +449,87 @@
     }
 
     var speakQueueTimer = null;
+    var speakChainTimers = [];
+    var speakKeepAlive = null;
 
-    function speakQueue(parts, freq) {
-      if (!parts || !parts.length) return;
-      if (freq) playBeep(freq);
-      if (!window.speechSynthesis) return;
-      try {
-        refreshVoices();
-        if (speakQueueTimer) {
-          clearTimeout(speakQueueTimer);
-          speakQueueTimer = null;
-        }
-        window.speechSynthesis.cancel();
-        // 一次排入整段佇列，避免手機瀏覽器 onend 串接下一段失敗
-        speakQueueTimer = setTimeout(function () {
-          speakQueueTimer = null;
-          window.speechSynthesis.resume();
-          for (var i = 0; i < parts.length; i++) {
-            var utter = new SpeechSynthesisUtterance(parts[i]);
-            utter.lang = 'zh-TW';
-            utter.rate = 1.05;
-            if (chineseVoice) utter.voice = chineseVoice;
-            window.speechSynthesis.speak(utter);
-          }
-        }, 80);
-      } catch (err) {}
-    }
-
-    function speakTimeUpThenLand(extraAfter) {
-      // 合成單句較穩定；哨音後再播，避免被取消
-      var text = '時間到，降落！降落！降落！叫你降落你聽不懂人話是不是？';
-      if (extraAfter) text += '，' + extraAfter;
+    function clearSpeakChain() {
       if (speakQueueTimer) {
         clearTimeout(speakQueueTimer);
         speakQueueTimer = null;
       }
+      for (var i = 0; i < speakChainTimers.length; i++) clearTimeout(speakChainTimers[i]);
+      speakChainTimers = [];
+      if (speakKeepAlive) {
+        clearInterval(speakKeepAlive);
+        speakKeepAlive = null;
+      }
+    }
+
+    function startSpeakKeepAlive() {
+      if (speakKeepAlive) clearInterval(speakKeepAlive);
+      speakKeepAlive = setInterval(function () {
+        if (!window.speechSynthesis) return;
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+          window.speechSynthesis.resume();
+        } else {
+          clearInterval(speakKeepAlive);
+          speakKeepAlive = null;
+        }
+      }, 2500);
+    }
+
+    function speakSequential(parts, index) {
+      if (!parts || index >= parts.length) {
+        if (speakKeepAlive) {
+          clearInterval(speakKeepAlive);
+          speakKeepAlive = null;
+        }
+        return;
+      }
+      if (!window.speechSynthesis) return;
+      try {
+        refreshVoices();
+        window.speechSynthesis.cancel();
+        var utter = new SpeechSynthesisUtterance(parts[index]);
+        utter.lang = 'zh-TW';
+        utter.rate = 0.95;
+        if (chineseVoice) utter.voice = chineseVoice;
+        var done = false;
+        var fallbackMs = Math.max(2800, parts[index].length * 420);
+        function goNext() {
+          if (done) return;
+          done = true;
+          var t = setTimeout(function () {
+            speakSequential(parts, index + 1);
+          }, 350);
+          speakChainTimers.push(t);
+        }
+        utter.onend = goNext;
+        utter.onerror = goNext;
+        speakChainTimers.push(setTimeout(goNext, fallbackMs));
+        startSpeakKeepAlive();
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utter);
+      } catch (err) {
+        speakSequential(parts, index + 1);
+      }
+    }
+
+    function speakTimeUpThenLand(extraAfter) {
+      // 刷球與三分鐘共用同一組分段，避免長句被手機截斷
+      var parts = [
+        '時間到',
+        '降落，降落，降落',
+        '叫你降落，你聽不懂人話是不是'
+      ];
+      if (extraAfter) parts.push(String(extraAfter));
+      clearSpeakChain();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      playBeep(900);
       speakQueueTimer = setTimeout(function () {
         speakQueueTimer = null;
-        speakText(text, 900);
-      }, 700);
+        speakSequential(parts, 0);
+      }, 900);
     }
 
     if (window.speechSynthesis) {
@@ -870,12 +912,14 @@
           timerRunning = false;
           clearInterval(timerInterval);
           timerInterval = null;
+          if (window.speechSynthesis) window.speechSynthesis.cancel();
           soundWhistle(true);
           if (mode === 'brush') {
             updateTimerUIState();
             speakTimeUpThenLand();
             return;
           }
+          // 三分鐘結束：先切點球畫面，語音與刷球相同，最後再加「進入點球」
           enterPenaltyMode(true);
         }
       }, 1000);
@@ -927,8 +971,13 @@
       pressedSide = null;
       renderTimerDisplay();
       updateTimerUIState();
-      if (fromClock === false) speakText('進入點球');
-      else speakTimeUpThenLand('進入點球');
+      if (fromClock === false) {
+        clearSpeakChain();
+        speakText('進入點球');
+      } else {
+        // 與刷球相同三段，再單獨接「進入點球」
+        speakTimeUpThenLand('進入點球');
+      }
     }
 
     function startPenaltyShot() {
@@ -1182,7 +1231,9 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js').catch(function () {});
+        navigator.serviceWorker.register('./sw.js?v=10').then(function (reg) {
+          if (reg && reg.update) reg.update();
+        }).catch(function () {});
       });
     }
   </script>
