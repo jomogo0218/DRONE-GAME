@@ -165,6 +165,15 @@
         radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0),
         radial-gradient(circle at 50% 30%, #0f766e 0%, #115e59 45%, #042f2e 100%);
       background-size: 24px 24px, 100% 100%;
+      /* 避開瀏海／動態島與底部 Home 指示條（safe-area 為 0 時也留保底下移） */
+      padding-top: max(5.75rem, calc(env(safe-area-inset-top, 0px) + 5.25rem)) !important;
+      padding-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem)) !important;
+      padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+      padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+    }
+    body.mode-brush #topChrome {
+      top: max(2.85rem, calc(env(safe-area-inset-top, 0px) + 0.4rem));
+      max-width: calc(100vw - 1rem);
     }
     body.mode-brush .score-block-blue {
       padding-left: 0;
@@ -172,7 +181,7 @@
       padding-bottom: 7rem;
     }
     body.mode-brush .score-num {
-      font-size: clamp(120px, 28vh, 240px);
+      font-size: clamp(100px, 24vh, 220px);
     }
     body.mode-brush .blue-glow {
       text-shadow: 0 0 40px rgba(52, 211, 153, 0.85), 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -183,7 +192,9 @@
     }
     body.mode-brush #centerHud {
       align-items: flex-end;
-      padding-bottom: 5.5rem;
+      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
     }
     body.mode-brush .hud-island {
       width: min(240px, 78vw);
@@ -198,6 +209,10 @@
     }
     body.mode-brush .score-hint[data-team="blue"] {
       color: rgba(167, 243, 208, 0.9);
+    }
+    body.mode-brush #countdownModal {
+      padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
     }
     @keyframes phoneRotateAnim {
       0%, 15% { transform: rotate(0deg); }
@@ -326,7 +341,7 @@
       </div>
     </div>
 
-    <div class="absolute top-2 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5">
+    <div id="topChrome" class="absolute top-2 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1.5">
       <div class="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-lg flex items-center gap-2 text-white">
         <span class="text-[11px] sm:text-xs font-black tracking-wide">嘉華中學</span>
         <span class="w-px h-3 bg-white/35"></span>
@@ -1231,7 +1246,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('./sw.js?v=10').then(function (reg) {
+        navigator.serviceWorker.register('./sw.js?v=11').then(function (reg) {
           if (reg && reg.update) reg.update();
         }).catch(function () {});
       });
