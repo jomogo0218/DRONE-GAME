@@ -290,7 +290,7 @@
       <div id="countdownPhaseLabel" class="px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-hud font-bold border border-amber-400/50 tracking-widest mb-3">準備開賽</div>
       <h2 class="text-xl font-black text-white tracking-wide">各就各位</h2>
       <div id="countdownNumber" class="font-hud text-9xl font-black text-amber-400 my-4 drop-shadow-[0_0_35px_rgba(251,191,36,0.9)]">5</div>
-      <p id="countdownHint" class="text-xs text-slate-300/80 mb-6">中文報數結束後鳴哨，3 分鐘計時才開始</p>
+      <p id="countdownHint" class="text-xs text-slate-300/80 mb-6">英文報數結束後鳴哨，3 分鐘計時才開始</p>
       <button onclick="cancelCountdown()" class="py-2.5 px-6 rounded-xl bg-slate-800 active:scale-95 text-slate-200 text-xs font-bold border border-slate-600/70">取消倒數</button>
     </div>
   </div>
@@ -324,18 +324,28 @@
     var currentThemeIndex = 0;
     var audioContext = null;
     var chineseVoice = null;
-    var COUNT_WORDS = { 10: '十', 9: '九', 8: '八', 7: '七', 6: '六', 5: '五', 4: '四', 3: '三', 2: '二', 1: '一' };
+    var englishVoice = null;
+    var COUNT_WORDS = { 10: 'ten', 9: 'nine', 8: 'eight', 7: 'seven', 6: 'six', 5: 'five', 4: 'four', 3: 'three', 2: 'two', 1: 'one' };
+
+    function voiceLang(voice) {
+      return (voice.lang || '').toLowerCase().replace('_', '-');
+    }
 
     function refreshVoices() {
       if (!window.speechSynthesis) return;
       var voices = window.speechSynthesis.getVoices();
-      var matches = voices.filter(function (voice) {
-        var lang = (voice.lang || '').toLowerCase().replace('_', '-');
-        return lang.indexOf('zh') === 0;
+      var chinese = voices.filter(function (voice) {
+        return voiceLang(voice).indexOf('zh') === 0;
       });
-      chineseVoice = matches.find(function (voice) {
+      chineseVoice = chinese.find(function (voice) {
         return /zh-tw|zh-hant/i.test(voice.lang) || /hanhan|hsiao|yating|台灣|臺灣/i.test(voice.name);
-      }) || matches[0] || null;
+      }) || chinese[0] || null;
+      var english = voices.filter(function (voice) {
+        return voiceLang(voice).indexOf('en') === 0;
+      });
+      englishVoice = english.find(function (voice) {
+        return voiceLang(voice).indexOf('en-us') === 0;
+      }) || english[0] || null;
     }
 
     function playBeep(freq) {
@@ -356,15 +366,17 @@
       } catch (err) {}
     }
 
-    function speakText(text, freq) {
+    function speakText(text, freq, lang) {
       if (freq) playBeep(freq);
       if (!window.speechSynthesis || !text) return;
       try {
         refreshVoices();
+        var english = lang === 'en';
         var utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'zh-TW';
-        utter.rate = 1.15;
-        if (chineseVoice) utter.voice = chineseVoice;
+        utter.lang = english ? 'en-US' : 'zh-TW';
+        utter.rate = english ? 1 : 1.15;
+        var voice = english ? englishVoice : chineseVoice;
+        if (voice) utter.voice = voice;
         window.speechSynthesis.cancel();
         setTimeout(function () {
           window.speechSynthesis.resume();
@@ -461,8 +473,9 @@
       var resuming = mode !== 'penalty' && remainingSeconds > 0 && remainingSeconds < MATCH_SECONDS;
       runCountdown5s({
         startWord: resuming ? '繼續比賽' : '開賽',
+        speakWord: resuming ? 'Resume' : 'Start',
         phaseLabel: resuming ? '準備繼續' : '準備開賽',
-        hint: '中文報數結束後鳴哨，3 分鐘計時才開始',
+        hint: '英文報數結束後鳴哨，3 分鐘計時才開始',
         onDone: beginRunningTimer
       });
     }
@@ -470,10 +483,12 @@
     function beginPenaltyCountdown() {
       if (mode !== 'penalty' || penaltyRunning || !penaltyShooter) return;
       var sideName = penaltyShooter === 'blue' ? '藍方點球' : '紅方點球';
+      var sideWord = penaltyShooter === 'blue' ? 'Blue' : 'Red';
       runCountdown5s({
         startWord: sideName,
+        speakWord: sideWord,
         phaseLabel: '準備點球',
-        hint: '中文報數結束後鳴哨，10 秒點球才開始',
+        hint: '英文報數結束後鳴哨，10 秒點球才開始',
         onDone: startPenaltyShot
       });
     }
@@ -488,20 +503,20 @@
       document.getElementById('countdownPhaseLabel').textContent = options.phaseLabel;
       document.getElementById('countdownHint').textContent = options.hint;
       showCountdown(true);
-      speakText('五', 750);
+      speakText('five', 750, 'en');
       countdownInterval = setInterval(function () {
         countdownSec -= 1;
         if (countdownSec > 0) {
           numberEl.classList.remove('is-phrase');
           numberEl.textContent = String(countdownSec);
-          speakText(COUNT_WORDS[countdownSec], 750 + (5 - countdownSec) * 75);
+          speakText(COUNT_WORDS[countdownSec], 750 + (5 - countdownSec) * 75, 'en');
           return;
         }
         clearInterval(countdownInterval);
         countdownInterval = null;
         numberEl.textContent = options.startWord;
         numberEl.classList.toggle('is-phrase', options.startWord.length > 2);
-        speakText(options.startWord, 1250);
+        speakText(options.speakWord || options.startWord, 1250, 'en');
         soundWhistle(true);
         countdownArmTimer = setTimeout(function () {
           countdownArmTimer = null;
@@ -539,8 +554,8 @@
         if (remainingSeconds <= 0) return;
         remainingSeconds -= 1;
         renderTimerDisplay();
-        if (remainingSeconds === 30) speakText('最後三十秒', 920);
-        if (remainingSeconds > 0 && remainingSeconds <= 10) speakText(COUNT_WORDS[remainingSeconds], 820 + (10 - remainingSeconds) * 40);
+        if (remainingSeconds === 30) speakText('Thirty', 920, 'en');
+        if (remainingSeconds > 0 && remainingSeconds <= 10) speakText(COUNT_WORDS[remainingSeconds], 820 + (10 - remainingSeconds) * 40, 'en');
         if (remainingSeconds === 0) {
           timerRunning = false;
           clearInterval(timerInterval);
