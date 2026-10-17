@@ -316,6 +316,7 @@
     var countdownInterval = null;
     var countdownArmTimer = null;
     var countdownSpeakTimer = null;
+    var countdownToken = 0;
     var countdownSec = 5;
     var themes = [
       { id: 'theme-stadium', name: '極簡白金' },
@@ -542,22 +543,50 @@
         countdownInterval = null;
         numberEl.textContent = options.startWord;
         numberEl.classList.toggle('is-phrase', options.startWord.length > 2);
-        getAudioCtx();
-        soundWhistle(true);
-        countdownSpeakTimer = setTimeout(function () {
-          countdownSpeakTimer = null;
-          speakText(options.speakWord || options.startWord, 0, 'en');
-        }, 1000);
-        countdownArmTimer = setTimeout(function () {
-          countdownArmTimer = null;
-          showCountdown(false);
-          options.onDone();
-        }, 450);
+        finishCountdownWithWhistle(options);
       }, 1000);
     }
 
+    function finishCountdownWithWhistle(options) {
+      var token = countdownToken;
+      var started = false;
+      function beginTogether() {
+        if (started || token !== countdownToken) return;
+        started = true;
+        if (countdownSpeakTimer) {
+          clearTimeout(countdownSpeakTimer);
+          countdownSpeakTimer = null;
+        }
+        getAudioCtx();
+        soundWhistle(true);
+        countdownArmTimer = setTimeout(function () {
+          countdownArmTimer = null;
+          if (token !== countdownToken) return;
+          showCountdown(false);
+          options.onDone();
+        }, 450);
+      }
+      var word = options.speakWord || options.startWord;
+      try {
+        refreshVoices();
+        var utter = new SpeechSynthesisUtterance(word);
+        utter.lang = 'en-US';
+        utter.rate = 1;
+        if (englishVoice) utter.voice = englishVoice;
+        utter.onstart = beginTogether;
+        window.speechSynthesis.cancel();
+        setTimeout(function () {
+          if (token !== countdownToken || !window.speechSynthesis) return;
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(utter);
+        }, 40);
+      } catch (err) {}
+      countdownSpeakTimer = setTimeout(beginTogether, 900);
+    }
+
     function cancelCountdown() {
-      var wasCounting = !!(countdownInterval || countdownArmTimer);
+      countdownToken += 1;
+      var wasCounting = !!(countdownInterval || countdownArmTimer || countdownSpeakTimer);
       if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
