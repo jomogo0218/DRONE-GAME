@@ -315,6 +315,7 @@
     var timerInterval = null;
     var countdownInterval = null;
     var countdownArmTimer = null;
+    var countdownSpeakTimer = null;
     var countdownSec = 5;
     var themes = [
       { id: 'theme-stadium', name: '極簡白金' },
@@ -493,9 +494,24 @@
       });
     }
 
+    function holdAudioOpen(seconds) {
+      try {
+        var ctx = getAudioCtx();
+        if (!ctx) return;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        gain.gain.value = 0.00001;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + seconds);
+      } catch (err) {}
+    }
+
     function runCountdown5s(options) {
       pauseTimer();
       cancelCountdown();
+      holdAudioOpen(8);
       countdownSec = 5;
       var numberEl = document.getElementById('countdownNumber');
       numberEl.classList.add('is-phrase');
@@ -526,8 +542,12 @@
         countdownInterval = null;
         numberEl.textContent = options.startWord;
         numberEl.classList.toggle('is-phrase', options.startWord.length > 2);
-        speakText(options.speakWord || options.startWord, 1250, 'en');
+        getAudioCtx();
         soundWhistle(true);
+        countdownSpeakTimer = setTimeout(function () {
+          countdownSpeakTimer = null;
+          speakText(options.speakWord || options.startWord, 0, 'en');
+        }, 1000);
         countdownArmTimer = setTimeout(function () {
           countdownArmTimer = null;
           showCountdown(false);
@@ -545,6 +565,10 @@
       if (countdownArmTimer) {
         clearTimeout(countdownArmTimer);
         countdownArmTimer = null;
+      }
+      if (countdownSpeakTimer) {
+        clearTimeout(countdownSpeakTimer);
+        countdownSpeakTimer = null;
       }
       showCountdown(false);
       if (window.speechSynthesis) window.speechSynthesis.cancel();
